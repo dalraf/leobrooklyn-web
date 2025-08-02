@@ -37,7 +37,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this._shotSpawned = false; // Flag para controlar se um projétil já foi spawnado durante a animação de tiro.
 
     // Configurações do corpo físico e renderização.
-    this.setCollideWorldBounds(true); // Impede que o jogador saia dos limites da tela.
+    this.setCollideWorldBounds(false); // Impede que o jogador saia dos limites da tela.
     this.setDepth(5); // Define a profundidade de renderização (para sobreposição de sprites).
     this.body.setAllowGravity(false); // Desativa a gravidade para o corpo físico.
 
@@ -139,14 +139,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
    * @param {number} dy - Deslocamento no eixo Y.
    */
   _move(dx, dy) {
-    this.x += dx;
+    this.x = WIDTH / 2; // Mantém o jogador fixo no centro horizontalmente.
     this.y += dy;
     // Limites verticais: impede que o jogador vá acima de SPRITE_LEVEL_Y_HIGH ou abaixo de HEIGHT.
     if (this.y < SPRITE_LEVEL_Y_HIGH) this.y = SPRITE_LEVEL_Y_HIGH;
     if (this.y > HEIGHT) this.y = HEIGHT; // Garante que o jogador não ultrapasse o limite inferior da tela.
-    // Limites horizontais: impede que o jogador saia da tela.
-    if (this.x < 0) this.x = 0;
-    if (this.x > WIDTH) this.x = WIDTH;
   }
 
   /**

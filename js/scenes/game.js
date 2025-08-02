@@ -286,16 +286,15 @@ export class GameScene extends Phaser.Scene {
 
     // Lógica de movimento do jogador e cálculo do offset de parallax.
     if (right) {
-      // Se o jogador estiver perto da borda direita, ativa o moonwalk e parallax.
-      if (p.x > WIDTH * PARALLAX_START_THRESHOLD) {
-        this.parallax_offset = p.step; // Define o offset de parallax com base no passo do jogador.
-        p.move_moonwalk(); // Move o jogador em moonwalk.
-      } else {
-        this.parallax_offset = 0; // Sem parallax se o jogador não estiver perto da borda.
-        p.move_right(); // Move o jogador normalmente para a direita.
-      }
+      // O jogador permanece no centro, o cenário se move.
+      this.parallax_offset = p.step; // Define o offset de parallax com base no passo do jogador.
+      p.move_right(); // Aciona a animação de andar, mas o jogador não se moverá.
+    } else if (left) {
+      this.parallax_offset = -p.step; // Parallax reverso para a esquerda.
+      p.move_left();
+    } else {
+      this.parallax_offset = 0; // Sem parallax se não estiver se movendo.
     }
-    if (left) p.move_left();
     if (up) p.move_up();
     if (down) p.move_down();
 
@@ -317,7 +316,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     // Aplica o efeito de parallax se houver um offset.
-    if (this.parallax_offset > 0) {
+    if (this.parallax_offset !== 0) {
       const step = this.parallax_offset; // O passo do parallax.
       // Itera sobre todos os grupos de sprites e aplica o parallax.
       this.groupEnemy.children.iterate((obj) => obj && obj.paralaxe && obj.paralaxe(step));
@@ -330,15 +329,13 @@ export class GameScene extends Phaser.Scene {
       this.bg2.x -= step;
 
       // Reposiciona as imagens de fundo quando saem da tela para criar um loop infinito.
-      if (this.bg1.x <= -this.bg1.displayWidth) {
-          this.bg1.x = this.bg2.x + this.bg2.displayWidth;
-      }
-      if (this.bg2.x <= -this.bg2.displayWidth) {
-          this.bg2.x = this.bg1.x + this.bg1.displayWidth;
-      }
+      if (this.bg1.x < -this.bg1.displayWidth) this.bg1.x += this.bg1.displayWidth * 2;
+      if (this.bg2.x < -this.bg2.displayWidth) this.bg2.x += this.bg2.displayWidth * 2;
+      if (this.bg1.x > this.bg1.displayWidth) this.bg1.x -= this.bg1.displayWidth * 2;
+      if (this.bg2.x > this.bg2.displayWidth) this.bg2.x -= this.bg2.displayWidth * 2;
 
       this.parallax_offset = 0; // Reseta o offset.
-      this.distance += step; // Aumenta a distância percorrida.
+      if (step > 0) this.distance += step; // Aumenta a distância percorrida apenas para frente.
     }
   }
 
