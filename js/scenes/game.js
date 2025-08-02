@@ -80,7 +80,11 @@ export class GameScene extends Phaser.Scene {
     this.groupObjPlayer.clear(true, true);
     this.groupObjStatic.clear(true, true);
 
-    this.player.reset();
+    if (this.player) {
+        this.player.destroy();
+    }
+    this.player = new Player(this, WIDTH / 2, HEIGHT * 0.65);
+    this.groupPlayer.add(this.player);
     this.score = 0;
     this.distance = 0;
     this.enemy_spawn_timer = 0;
@@ -95,9 +99,9 @@ export class GameScene extends Phaser.Scene {
       const speedFactor = Math.floor(fator / 2);
       let enemy;
       if (tipo === 'enemy1') {
-        enemy = new Enemy1(this, WIDTH + 10, Phaser.Math.Between(HEIGHT - 500, HEIGHT - 10), speedFactor);
+        enemy = new Enemy1(this, WIDTH + 10, Phaser.Math.Between(SPRITE_LEVEL_Y_HIGH, HEIGHT - 50), speedFactor);
       } else {
-        enemy = new Enemy2(this, WIDTH + 10, Phaser.Math.Between(HEIGHT - 500, HEIGHT - 10), speedFactor);
+        enemy = new Enemy2(this, WIDTH + 10, Phaser.Math.Between(SPRITE_LEVEL_Y_HIGH, HEIGHT - 50), speedFactor);
       }
       this.groupEnemy.add(enemy);
     }
