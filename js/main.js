@@ -10,7 +10,6 @@ import { WIDTH, HEIGHT, GAME_FPS } from './modules/config.js';
 import { PreloadScene } from './scenes/preload.js';
 import { GameScene } from './scenes/game.js';
 import { UIScene } from './scenes/ui.js';
-import { MenuScene } from './scenes/menu.js';
 
 // Configuração principal do Phaser.
 const config = {
@@ -37,7 +36,7 @@ const config = {
     target: GAME_FPS,
     forceSetTimeOut: true,
   },
-  scene: [PreloadScene, MenuScene, GameScene, UIScene],
+  scene: [PreloadScene, GameScene, UIScene],
 };
 
 // Adiciona um listener para o evento 'load' da janela, garantindo que o DOM esteja pronto.
@@ -45,9 +44,29 @@ window.addEventListener('load', () => {
   // Inicializa a instância do jogo Phaser com a configuração definida.
   const game = new Phaser.Game(config);
 
-  // REMOVIDO: Gerenciamento do overlay de início (tela de "clique para iniciar").
-  // O menu agora é gerenciado pela MenuScene do Phaser.
+  // Gerenciamento do overlay de início (tela de "clique para iniciar").
+  const overlay = document.getElementById('overlay');
+  const startBtn = document.getElementById('startBtn');
 
-  // REMOVIDO: Lógica de onStart, startBtn e keydown-ENTER para o overlay HTML.
-  // Essas interações serão tratadas dentro da MenuScene.
+  // Função chamada ao iniciar o jogo (clique no botão ou Enter).
+  const onStart = () => {
+    if (overlay) {
+      overlay.style.display = 'none';
+    }
+    game.events.emit('user-start');
+  };
+
+  if (startBtn) {
+    startBtn.addEventListener('click', onStart);
+  }
+
+  if (overlay) {
+    overlay.addEventListener('pointerdown', onStart, { once: true });
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && overlay && overlay.style.display !== 'none') {
+      onStart();
+    }
+  });
 });
