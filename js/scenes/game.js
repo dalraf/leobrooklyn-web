@@ -244,7 +244,7 @@ export class GameScene extends Phaser.Scene {
     if (!this.player.active) {
       if (!this.stopgame) {
         this.stopgame = true;
-        if (this.music.isPlaying) this.music.stop();
+        if (this.music && this.music.isPlaying) this.music.stop();
         // Reexibe overlay via DOM
         const overlay = document.getElementById('overlay');
         overlay.style.display = 'flex';
