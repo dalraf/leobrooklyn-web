@@ -16,7 +16,9 @@ export class PreloadScene extends Phaser.Scene {
   preload() {
    // Define a base URL para o carregador de assets, considerando o ambiente do GitHub Pages
    // Se a URL for https://dalraf.github.io/leobrooklyn-web/, o baseURL será /leobrooklyn-web/
-   this.load.baseURL = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
+   // Define a base URL para o carregador de assets, considerando o ambiente do GitHub Pages
+   // Se o host for 'dalraf.github.io', usa o nome do repositório como base. Caso contrário, usa './'.
+   this.load.baseURL = (window.location.host === 'dalraf.github.io') ? '/leobrooklyn-web/' : './';
     // Carrega a imagem de fundo principal.
     this.load.image('bg', resourcePath('images/bg.png'));
 
