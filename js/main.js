@@ -60,6 +60,10 @@ window.addEventListener('load', () => {
     startBtn.addEventListener('click', onStart);
   }
 
+  if (overlay) {
+    overlay.addEventListener('pointerdown', onStart, { once: true });
+  }
+
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && overlay && overlay.style.display !== 'none') {
       onStart();
