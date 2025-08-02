@@ -86,7 +86,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         if (this.move_list.includes(MOONWALK)) {
           this.execute = this.action_andando;
         } else {
-          this.execute = this.action_parado;
+          // Só define para parado se nenhuma ação de prioridade estiver prestes a começar
+          if (this.execute !== this.action_atirar && this.execute !== this.action_in_attack) {
+            this.execute = this.action_parado;
+          }
         }
       }
     }

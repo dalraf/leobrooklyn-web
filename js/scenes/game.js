@@ -205,15 +205,18 @@ export class GameScene extends Phaser.Scene {
     if (up) p.move_up();
     if (down) p.move_down();
 
-    if (!(up || down || left || right)) {
-      p.move_stopped();
-    }
-
+    let action_triggered = false;
     if (Phaser.Input.Keyboard.JustDown(this.keySpace)) {
       p.move_atirar();
+      action_triggered = true;
     }
     if (Phaser.Input.Keyboard.JustDown(this.keyCtrl)) {
       p.move_attack();
+      action_triggered = true;
+    }
+
+    if (!(up || down || left || right) && !action_triggered) {
+      p.move_stopped();
     }
 
     if (this.parallax_offset > 0) {
@@ -253,15 +256,15 @@ export class GameScene extends Phaser.Scene {
     this.objectSpriteCollide(this.groupPlayer, this.groupObjEnemy);
     this.playerEnemyAttackHit();
 
+    // Input/movimento e parallax
+    this.handleInputAndParallax();
+
     // Atualiza entidades (Arcade chama preUpdate, mas temos update custom em classes)
     this.groupPlayer.children.iterate((s) => s && s.customUpdate && s.customUpdate());
     this.groupEnemy.children.iterate((s) => s && s.customUpdate && s.customUpdate(this.groupPlayer, this.groupEnemy));
     this.groupObjPlayer.children.iterate((s) => s && s.customUpdate && s.customUpdate());
     this.groupObjEnemy.children.iterate((s) => s && s.customUpdate && s.customUpdate());
     this.groupObjStatic.children.iterate((s) => s && s.customUpdate && s.customUpdate());
-
-    // Input/movimento e parallax
-    this.handleInputAndParallax();
 
     // HUD
     this.updateHud();
