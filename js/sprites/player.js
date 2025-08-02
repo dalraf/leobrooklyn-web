@@ -143,7 +143,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       const scene = this.scene;
       const dir = this.reverse ? -1 : 1;
       const PedraPlayer = scene.registry.get('Class:PedraPlayer');
-      const proj = new PedraPlayer(scene, this.x + (dir > 0 ? 20 : -20), this.y - 15, dir);
+      const proj = new PedraPlayer(scene, this.x + (dir > 0 ? 20 : -20), this.y - 50, dir);
       scene.groupObjPlayer.add(proj);
       this.pedras -= 1;
     }
