@@ -10,7 +10,7 @@
 
 import {
   WIDTH, HEIGHT, PARALLAX_START_THRESHOLD,
-  DIFICULT_AVANCE, ENEMY_SPAWN_TICK_RESET, DERIVACAO,
+  DIFICULT_AVANCE, ENEMY_SPAWN_TICK_RESET, DERIVACAO, GAME_FPS,
   calcule_vetor_distance, // Importa a função de cálculo de distância
   SPRITE_LEVEL_Y_HIGH // Importa a altura de referência para sprites
 } from '../modules/config.js';
@@ -179,19 +179,18 @@ export class GameScene extends Phaser.Scene {
    * @param {number} fator - Fator que influencia a quantidade e velocidade dos inimigos.
    */
   spawnEnemies(fator) {
-    const count = Phaser.Math.Between(1, fator); // Quantidade de inimigos a serem spawnados.
-    for (let i = 0; i < count; i++) {
-      const tipo = Phaser.Utils.Array.GetRandom(this.enemylist); // Escolhe um tipo de inimigo aleatoriamente.
-      const speedFactor = Math.floor(fator / 2); // Fator de velocidade baseado na dificuldade.
-      let enemy;
-      // Instancia o inimigo com base no tipo escolhido.
-      if (tipo === 'enemy1') {
-        enemy = new Enemy1(this, WIDTH + 10, Phaser.Math.Between(SPRITE_LEVEL_Y_HIGH, HEIGHT - 50), speedFactor);
-      } else {
-        enemy = new Enemy2(this, WIDTH + 10, Phaser.Math.Between(SPRITE_LEVEL_Y_HIGH, HEIGHT - 50), speedFactor);
-      }
-      this.groupEnemy.add(enemy); // Adiciona o inimigo ao grupo de inimigos.
+    // A quantidade de inimigos agora é sempre 1 para uma curva de dificuldade mais suave.
+    // O 'fator' de dificuldade ainda influencia a velocidade do inimigo.
+    const tipo = Phaser.Utils.Array.GetRandom(this.enemylist); // Escolhe um tipo de inimigo aleatoriamente.
+    const speedFactor = Math.floor(fator / 2); // Fator de velocidade baseado na dificuldade.
+    let enemy;
+    // Instancia o inimigo com base no tipo escolhido.
+    if (tipo === 'enemy1') {
+      enemy = new Enemy1(this, WIDTH + 10, Phaser.Math.Between(SPRITE_LEVEL_Y_HIGH, HEIGHT - 50), speedFactor);
+    } else {
+      enemy = new Enemy2(this, WIDTH + 10, Phaser.Math.Between(SPRITE_LEVEL_Y_HIGH, HEIGHT - 50), speedFactor);
     }
+    this.groupEnemy.add(enemy); // Adiciona o inimigo ao grupo de inimigos.
   }
 
   /**
@@ -216,16 +215,29 @@ export class GameScene extends Phaser.Scene {
    * Gerencia a lógica de geração de inimigos e objetos com base na distância percorrida.
    */
   generateEnemies() {
-    if (!this.stopgame) { // Só gera inimigos se o jogo não estiver parado.
-      if (this.enemy_spawn_timer === 0) { // Verifica se o timer de spawn zerou.
-        if (this.distance % DIFICULT_AVANCE === 0) { // Aumenta a dificuldade a cada DIFICULT_AVANCE.
-          const fator = 1 + Math.floor(this.distance / DIFICULT_AVANCE); // Calcula o fator de dificuldade.
-          this.spawnEnemies(fator); // Spawna inimigos.
-          this.spawnObjects(); // Spawna objetos.
-          this.enemy_spawn_timer = ENEMY_SPAWN_TICK_RESET; // Reseta o timer de spawn.
-        }
+    if (this.stopgame) return; // Só gera inimigos se o jogo não estiver parado.
+
+    // Decrementa o timer de spawn.
+    this.enemy_spawn_timer = Math.max(0, this.enemy_spawn_timer - 1);
+
+    // Se o timer zerou, é hora de spawnar.
+    if (this.enemy_spawn_timer === 0) {
+      // Calcula o fator de dificuldade com base na distância.
+      const fator = 1 + Math.floor(this.distance / DIFICULT_AVANCE);
+      
+      // Spawna um inimigo (a função foi ajustada para spawnar apenas um).
+      this.spawnEnemies(fator);
+
+      // Spawna objetos estáticos com uma chance, para não poluir a tela.
+      if (Phaser.Math.Between(1, 5) === 1) {
+        this.spawnObjects();
       }
-      this.enemy_spawn_timer = Math.max(0, this.enemy_spawn_timer - 1); // Decrementa o timer.
+
+      // Reseta o timer. O tempo diminui com a dificuldade, até um mínimo.
+      const baseSpawnTime = ENEMY_SPAWN_TICK_RESET; // Tempo base (ex: 100 ticks)
+      const minSpawnTime = GAME_FPS; // Mínimo de 1 segundo entre spawns
+      const newSpawnTime = Math.max(minSpawnTime, baseSpawnTime - (fator * 4));
+      this.enemy_spawn_timer = newSpawnTime;
     }
   }
 
