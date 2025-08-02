@@ -43,7 +43,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     // Ajusta a origem do sprite e a posição inicial.
     this.setOrigin(0.5, 1.0); // Define a origem do sprite no centro inferior.
-    this.y = y;
+    this.y = HEIGHT; // Define a posição Y inicial como a altura máxima da tela.
     this.x = x;
 
     // Flag para controlar se o jogador está em uma ação de prioridade (ataque/tiro/hit).
@@ -143,7 +143,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.y += dy;
     // Limites verticais: impede que o jogador vá acima de SPRITE_LEVEL_Y_HIGH ou abaixo de HEIGHT.
     if (this.y < SPRITE_LEVEL_Y_HIGH) this.y = SPRITE_LEVEL_Y_HIGH;
-    if (this.y > HEIGHT) this.y = HEIGHT;
+    if (this.y > HEIGHT) this.y = HEIGHT; // Garante que o jogador não ultrapasse o limite inferior da tela.
     // Limites horizontais: impede que o jogador saia da tela.
     if (this.x < 0) this.x = 0;
     if (this.x > WIDTH) this.x = WIDTH;

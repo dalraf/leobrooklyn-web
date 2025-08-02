@@ -98,7 +98,7 @@ export class GameScene extends Phaser.Scene {
     if (this.player) {
       this.player.destroy(); // Destrói a instância anterior do player, se existir.
     }
-    this.player = new Player(this, WIDTH / 2, HEIGHT * 0.65); // Cria uma nova instância do Player.
+    this.player = new Player(this, WIDTH / 2, HEIGHT); // Reinicializa o player na posição Y máxima.
     this.groupPlayer.add(this.player); // Adiciona o player ao grupo de jogadores.
   }
 
