@@ -19,8 +19,9 @@
       #game-container {
         position: relative;   /* permite overlay/HUD sobre o canvas */
         width: 100vw;
-        height: 100vh;
+        height: max(100vh, -webkit-fill-available); /* Garante que o jogo ocupe a altura total disponível, considerando a barra de URL */
         overflow: hidden;
+        padding-bottom: env(safe-area-inset-bottom); /* Adiciona padding para compensar a área segura inferior */
       }
       .hud {
         position: absolute;
