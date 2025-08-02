@@ -102,6 +102,10 @@ export class GameScene extends Phaser.Scene {
 
     // Obtém a referência ao elemento DOM do HUD e o atualiza.
     this.hudEl = document.getElementById('hud');
+    // caches opcionais de sub-itens (novos chips de HUD)
+    this.hudScoreEl = document.getElementById('hudScore') || null;
+    this.hudLifeEl = document.getElementById('hudLife') || null;
+    this.hudRocksEl = document.getElementById('hudRocks') || null;
     this.updateHud();
 
     // Configura os controles de input do teclado.
@@ -280,7 +284,16 @@ export class GameScene extends Phaser.Scene {
     if (!this.hudEl) return; // Garante que o elemento HUD existe.
     const pedras = this.player ? this.player.pedras : 0;
     const life = this.player ? this.player.life : 0;
-    this.hudEl.textContent = `Placar: ${this.score}  Vida: ${life}  Pedras: ${pedras}`;
+
+    // Se os elementos dedicados existem, atualiza-os.
+    if (this.hudScoreEl && this.hudLifeEl && this.hudRocksEl) {
+      this.hudScoreEl.textContent = String(this.score);
+      this.hudLifeEl.textContent = String(life);
+      this.hudRocksEl.textContent = String(pedras);
+    } else {
+      // Fallback para layout antigo (texto simples)
+      this.hudEl.textContent = `Placar: ${this.score}  Vida: ${life}  Pedras: ${pedras}`;
+    }
   }
 
   /**
