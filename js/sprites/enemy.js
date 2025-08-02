@@ -117,10 +117,30 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     }
 
     this.dx = 0; this.dy = 0;
-    const toward = this.calculate_path(groupPlayer, 0);
-    this.dx += toward.dx; this.dy += toward.dy;
+
+    groupPlayer.children.iterate((player) => {
+        if (!player) return;
+
+        const dx_to_player = player.x - this.x;
+        const dy_to_player = player.y - this.y;
+
+        // Lógica para movimento horizontal: aproximar-se até uma distância mínima
+        const min_distance_x = this.width * 1.05; // 1.05 vezes o tamanho do sprite (reduzido em 30%)
+        if (Math.abs(dx_to_player) > min_distance_x) {
+            this.dx += (dx_to_player > 0 ? 1 : -1); // Move em direção ao player horizontalmente
+        } else {
+            // Se estiver dentro da distância mínima, não se move horizontalmente em relação ao player
+            this.dx = 0;
+        }
+
+        // Lógica para movimento vertical: sempre em direção ao player
+        this.dy += (dy_to_player > 0 ? 1 : -1);
+    });
+
+    // Manter a lógica de afastamento de outros inimigos
     const apart = this.calculate_path(groupEnemy, 40);
-    this.dx -= apart.dx; this.dy -= apart.dy;
+    this.dx -= apart.dx;
+    this.dy -= apart.dy;
 
     const passo_x = Math.trunc(this.dx * this.speed);
     const passo_y = Math.trunc(this.dy * this.speed);
