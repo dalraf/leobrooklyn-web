@@ -117,6 +117,9 @@ export class GameScene extends Phaser.Scene {
 
     // Setup de controles touch
     this._setupTouchControls();
+
+    // Setup do joystick (arrastar)
+    this._setupJoystick();
   }
 
   /**
@@ -315,6 +318,88 @@ export class GameScene extends Phaser.Scene {
 
     mapOnce(shoot, () => this.touchShootOnce = true);
     mapOnce(attack, () => this.touchAttackOnce = true);
+  }
+
+  /**
+   * Configura o joystick (base circular + knob) com arraste e zona morta.
+   */
+  _setupJoystick() {
+    const joy = document.getElementById('joystick');
+    const knob = document.getElementById('joy-knob');
+    if (!joy || !knob) return; // se HTML não existir, ignora
+
+    const rectFor = () => joy.getBoundingClientRect();
+    const center = () => {
+      const r = rectFor();
+      return { cx: r.left + r.width / 2, cy: r.top + r.height / 2, radius: Math.min(r.width, r.height) / 2 };
+    };
+
+    const deadZone = 0.18;      // fração do raio sem movimento
+    const maxKnobOffset = 0.42; // fração do raio para limite visual do knob
+
+    let active = false;
+    let id = null;
+
+    const setDirectionFrom = (pageX, pageY) => {
+      const { cx, cy, radius } = center();
+      const dx = pageX - cx;
+      const dy = pageY - cy;
+      // normaliza vetor ao raio
+      const mag = Math.hypot(dx, dy);
+      const norm = mag > 0 ? Math.min(1, mag / radius) : 0;
+      let vx = norm > 0 ? dx / mag : 0;
+      let vy = norm > 0 ? dy / mag : 0;
+
+      // aplica zona morta
+      if (norm < deadZone) {
+        vx = 0; vy = 0;
+      }
+
+      // define flags discretas a partir do vetor
+      this.touchLeft = vx < -0.35;
+      this.touchRight = vx > 0.35;
+      this.touchUp = vy < -0.35;
+      this.touchDown = vy > 0.35;
+
+      // move knob visualmente
+      const kmax = radius * maxKnobOffset;
+      const kx = Phaser.Math.Clamp(dx, -kmax, kmax);
+      const ky = Phaser.Math.Clamp(dy, -kmax, kmax);
+      knob.style.transform = `translate(${kx}px, ${ky}px)`;
+    };
+
+    const reset = () => {
+      this.touchLeft = this.touchRight = this.touchUp = this.touchDown = false;
+      knob.style.transform = 'translate(0,0)';
+    };
+
+    const onDown = (ev) => {
+      ev.preventDefault();
+      active = true;
+      id = ev.pointerId ?? null;
+      joy.setPointerCapture?.(id);
+      setDirectionFrom(ev.pageX, ev.pageY);
+    };
+    const onMove = (ev) => {
+      if (!active) return;
+      if (id != null && ev.pointerId != null && ev.pointerId !== id) return;
+      ev.preventDefault();
+      setDirectionFrom(ev.pageX, ev.pageY);
+    };
+    const onUp = (ev) => {
+      if (id != null && ev.pointerId != null && ev.pointerId !== id) return;
+      ev.preventDefault();
+      active = false;
+      id = null;
+      joy.releasePointerCapture?.(ev.pointerId ?? undefined);
+      reset();
+    };
+
+    joy.addEventListener('pointerdown', onDown, { passive: false });
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp, { passive: false });
+    window.addEventListener('pointercancel', onUp, { passive: false });
+    window.addEventListener('pointerleave', onUp, { passive: false });
   }
 
   /**

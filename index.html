@@ -66,10 +66,53 @@
       pointer-events: none;
       z-index: 30;
     }
+    /* Joystick base e knob */
+    .joystick {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      width: 180px;
+      height: 180px;
+      pointer-events: auto;
+      touch-action: none;
+    }
+    .joy-base {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+      border: 2px solid rgba(255,255,255,0.25);
+      box-shadow: inset 0 0 12px rgba(0,0,0,0.45);
+    }
+    .joy-knob {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 72px; height: 72px;
+      margin-left: -36px; margin-top: -36px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.35), rgba(255,255,255,0.12));
+      border: 2px solid rgba(255,255,255,0.45);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.45);
+      transition: transform 60ms ease-out;
+    }
+
+    /* Remove D-Pad antigo visualmente se existir */
+    #dpad { display: none !important; }
+
+    /* Ações */
+    #action-area {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      width: 220px;
+      height: 160px;
+      pointer-events: none;
+    }
     .tc-btn {
       position: absolute;
-      width: 64px;
-      height: 64px;
+      width: 80px;
+      height: 80px;
       border-radius: 50%;
       background: rgba(255,255,255,0.15);
       border: 2px solid rgba(255,255,255,0.35);
@@ -82,46 +125,19 @@
       font-family: monospace;
       user-select: none;
     }
-    .tc-btn:active { background: rgba(255,255,255,0.3); }
-
-    /* D-Pad */
-    #dpad {
-      position: absolute;
-      left: 16px;
-      bottom: 16px;
-      width: 192px;
-      height: 192px;
-      pointer-events: none;
-    }
-    #btn-up    { left: 64px; top: 0; }
-    #btn-left  { left: 0; top: 64px; }
-    #btn-right { left: 128px; top: 64px; }
-    #btn-down  { left: 64px; top: 128px; }
-
-    /* Ações */
-    #action-area {
-      position: absolute;
-      right: 16px;
-      bottom: 16px;
-      width: 220px;
-      height: 160px;
-      pointer-events: none;
-    }
     #btn-shoot {
-      right: 16px; bottom: 16px; width: 80px; height: 80px;
-      border-radius: 50%; background: rgba(80,160,255,0.2); border-color: rgba(80,160,255,0.5);
+      right: 16px; bottom: 16px;
+      background: rgba(80,160,255,0.2); border-color: rgba(80,160,255,0.5);
     }
     #btn-attack {
-      right: 112px; bottom: 48px; width: 80px; height: 80px;
-      border-radius: 50%; background: rgba(255,120,80,0.2); border-color: rgba(255,120,80,0.5);
+      right: 112px; bottom: 48px;
+      background: rgba(255,120,80,0.2); border-color: rgba(255,120,80,0.5);
     }
 
     @media (max-width: 420px) {
-      .tc-btn { width: 56px; height: 56px; }
-      #dpad { width: 168px; height: 168px; }
-      #btn-up { left: 56px; }
-      #btn-right { left: 112px; }
-      #btn-down { left: 56px; }
+      .joystick { width: 160px; height: 160px; }
+      .joy-knob { width: 64px; height: 64px; margin-left: -32px; margin-top: -32px; }
+      .tc-btn { width: 68px; height: 68px; }
     }
     </style>
   </head>
@@ -129,11 +145,9 @@
     <div id="game-container">
       <!-- Controles Touch sobre o canvas -->
       <div id="touch-controls" aria-hidden="false">
-        <div id="dpad">
-          <div id="btn-up" class="tc-btn" data-action="up">▲</div>
-          <div id="btn-left" class="tc-btn" data-action="left">◀</div>
-          <div id="btn-right" class="tc-btn" data-action="right">▶</div>
-          <div id="btn-down" class="tc-btn" data-action="down">▼</div>
+        <div class="joystick" id="joystick">
+          <div class="joy-base"></div>
+          <div class="joy-knob" id="joy-knob"></div>
         </div>
         <div id="action-area">
           <div id="btn-shoot" class="tc-btn" data-action="shoot">A</div>
