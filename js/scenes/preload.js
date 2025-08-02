@@ -107,6 +107,6 @@ export class PreloadScene extends Phaser.Scene {
     mk('enemy2-hit', ['enemy2-hit-1','enemy2-hit-2','enemy2-hit-3'], 10, 0);
 
     // Inicia a cena principal do jogo após o carregamento e criação das animações.
-    this.scene.start('GameScene');
+    this.scene.start('MenuScene');
   }
 }
