@@ -14,7 +14,9 @@ export class PreloadScene extends Phaser.Scene {
    * O Phaser garante que todos os assets sejam carregados antes de chamar o método create.
    */
   preload() {
-   this.load.baseURL = './'; // Define a base URL para o carregador de assets
+   // Define a base URL para o carregador de assets, considerando o ambiente do GitHub Pages
+   // Se a URL for https://dalraf.github.io/leobrooklyn-web/, o baseURL será /leobrooklyn-web/
+   this.load.baseURL = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
     // Carrega a imagem de fundo principal.
     this.load.image('bg', resourcePath('images/bg.png'));
 
