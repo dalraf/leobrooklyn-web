@@ -52,6 +52,24 @@ export class GameScene extends Phaser.Scene {
     this.bg2.displayHeight = HEIGHT;
     this.bg2.displayWidth = this.bg1.displayWidth;
 
+    // Ajuste responsivo: quando a tela muda (modo FIT), recalcular tamanhos/posições do fundo.
+    const reflowBackground = () => {
+      // Mantém a altura virtual e ajusta a largura proporcionalmente.
+      this.bg1.displayHeight = HEIGHT;
+      this.bg1.displayWidth = this.bg1.width * (HEIGHT / this.bg1.height);
+      this.bg1.x = 0;
+      this.bg1.y = 0;
+
+      this.bg2.displayHeight = HEIGHT;
+      this.bg2.displayWidth = this.bg1.displayWidth;
+      this.bg2.x = this.bg1.displayWidth;
+      this.bg2.y = 0;
+    };
+    // Ouve mudanças de tamanho do Scale Manager.
+    this.scale.on('resize', reflowBackground);
+    // Garante estado correto no primeiro frame após criação.
+    reflowBackground();
+
     // Listener para o evento 'user-start' (disparado pelo main.js ao clicar no overlay).
     this.game.events.on('user-start', () => {
       if (this.stopgame) {
