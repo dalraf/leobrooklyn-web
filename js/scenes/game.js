@@ -36,6 +36,7 @@ export class GameScene extends Phaser.Scene {
     this.keySpace = null; // Tecla Espaço.
     this.keyCtrl = null; // Tecla Ctrl.
     this.keyEnter = null; // Tecla Enter.
+    this.music = null; // Referência ao objeto de música de fundo.
 
     // Flags de controles touch
     this.touchLeft = false;
@@ -83,6 +84,12 @@ export class GameScene extends Phaser.Scene {
       if (this.stopgame) {
         this.stopgame = false; // Inicia o jogo.
         this.resetRun(); // Reseta o estado do jogo.
+        // Toca a música de fundo em loop.
+        if (this.music) {
+          this.music.stop(); // Garante que não haja múltiplas instâncias tocando.
+        }
+        this.music = this.sound.add('music', { loop: true });
+        this.music.play();
       }
     });
 
@@ -497,8 +504,8 @@ export class GameScene extends Phaser.Scene {
     if (this.player && !this.player.active) {
       if (!this.stopgame) {
         this.stopgame = true; // Para o jogo.
-        // Não há música de fundo implementada, então esta linha é desnecessária.
-        // if (this.music && this.music.isPlaying) this.music.stop();
+        // Para a música de fundo quando o jogo termina.
+        if (this.music && this.music.isPlaying) this.music.stop();
         const overlay = document.getElementById('overlay');
         if (overlay) {
           overlay.style.display = 'flex'; // Reexibe o overlay de início.

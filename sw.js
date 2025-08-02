@@ -13,6 +13,7 @@ const urlsToCache = [
   '/leobrooklyn-web/images/bg.png',
   '/leobrooklyn-web/images/band_aid.png',
   '/leobrooklyn-web/images/pedra.png',
+  '/leobrooklyn-web/sounds/musica_fundo.ogg',
   // Adicionar todas as imagens de sprites aqui
   // Player
   '/leobrooklyn-web/images/Player-1-Stop-1.png',

@@ -58,6 +58,8 @@ export class PreloadScene extends Phaser.Scene {
     // Carregamento de imagens para objetos estáticos e projéteis.
     this.load.image('pedra', resourcePath('images/pedra.png'));
     this.load.image('bandaid', resourcePath('images/band_aid.png'));
+    // Carrega o arquivo de áudio para a música de fundo.
+    this.load.audio('music', resourcePath('sounds/musica_fundo.ogg'));
   }
 
   /**
