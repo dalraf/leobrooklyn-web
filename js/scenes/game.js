@@ -85,6 +85,7 @@ export class GameScene extends Phaser.Scene {
     // Listener para o evento 'user-start' (disparado pelo main.js ao clicar no overlay).
     this.game.events.on('user-start', () => {
       if (this.stopgame) {
+        this.scene.resume('GameScene'); // Garante que a cena está rodando.
         this.stopgame = false; // Inicia o jogo.
         this.resetRun(); // Reseta o estado do jogo.
         // Toca a música de fundo em loop.

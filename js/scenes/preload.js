@@ -106,7 +106,15 @@ export class PreloadScene extends Phaser.Scene {
     mk('enemy2-attack', ['enemy2-attack-1','enemy2-attack-2','enemy2-attack-3','enemy2-attack-4','enemy2-attack-5','enemy2-attack-6'], 10, 0);
     mk('enemy2-hit', ['enemy2-hit-1','enemy2-hit-2','enemy2-hit-3'], 10, 0);
 
-    // Inicia a cena principal do jogo após o carregamento e criação das animações.
+    // Inicia a cena principal do jogo, mas a mantém pausada.
     this.scene.start('GameScene');
+    this.scene.pause('GameScene');
+
+    // Exibe o overlay de início agora que tudo está carregado.
+    const overlay = document.getElementById('overlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+    }
+
   }
 }
