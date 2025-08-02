@@ -36,6 +36,14 @@ export class GameScene extends Phaser.Scene {
     this.keySpace = null; // Tecla Espaço.
     this.keyCtrl = null; // Tecla Ctrl.
     this.keyEnter = null; // Tecla Enter.
+
+    // Flags de controles touch
+    this.touchLeft = false;
+    this.touchRight = false;
+    this.touchUp = false;
+    this.touchDown = false;
+    this.touchShootOnce = false;  // trigger de um frame
+    this.touchAttackOnce = false; // trigger de um frame
   }
 
   /**
@@ -106,6 +114,9 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.on('keydown-ENTER', () => {
       if (this.stopgame) this.game.events.emit('user-start');
     });
+
+    // Setup de controles touch
+    this._setupTouchControls();
   }
 
   /**
@@ -270,6 +281,43 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
+   * Configura listeners para controles touch no DOM.
+   */
+  _setupTouchControls() {
+    const mapHold = (el, setter) => {
+      if (!el) return;
+      const onDown = (ev) => { ev.preventDefault(); setter(true); };
+      const onUp = (ev) => { ev.preventDefault(); setter(false); };
+      el.addEventListener('pointerdown', onDown, { passive: false });
+      el.addEventListener('pointerup', onUp, { passive: false });
+      el.addEventListener('pointercancel', onUp, { passive: false });
+      el.addEventListener('pointerleave', onUp, { passive: false });
+    };
+    const mapOnce = (el, trigger) => {
+      if (!el) return;
+      el.addEventListener('pointerdown', (ev) => {
+        ev.preventDefault();
+        trigger();
+      }, { passive: false });
+    };
+
+    const up = document.getElementById('btn-up');
+    const left = document.getElementById('btn-left');
+    const right = document.getElementById('btn-right');
+    const down = document.getElementById('btn-down');
+    const shoot = document.getElementById('btn-shoot');
+    const attack = document.getElementById('btn-attack');
+
+    mapHold(up, (v) => this.touchUp = v);
+    mapHold(left, (v) => this.touchLeft = v);
+    mapHold(right, (v) => this.touchRight = v);
+    mapHold(down, (v) => this.touchDown = v);
+
+    mapOnce(shoot, () => this.touchShootOnce = true);
+    mapOnce(attack, () => this.touchAttackOnce = true);
+  }
+
+  /**
    * Lida com a entrada do usuário e o movimento de parallax.
    */
   handleInputAndParallax() {
@@ -279,10 +327,10 @@ export class GameScene extends Phaser.Scene {
     if (!p) return; // Garante que o player existe.
 
     // Verifica o estado das teclas de direção.
-    const right = this.cursors.right.isDown;
-    const left = this.cursors.left.isDown;
-    const up = this.cursors.up.isDown;
-    const down = this.cursors.down.isDown;
+    const right = this.cursors.right.isDown || this.touchRight;
+    const left = this.cursors.left.isDown || this.touchLeft;
+    const up = this.cursors.up.isDown || this.touchUp;
+    const down = this.cursors.down.isDown || this.touchDown;
 
     // Lógica de movimento do jogador e cálculo do offset de parallax.
     if (right) {
@@ -299,16 +347,19 @@ export class GameScene extends Phaser.Scene {
     if (down) p.move_down();
 
     let action_triggered = false;
-    // Verifica se a tecla Espaço foi pressionada (apenas uma vez por clique).
-    if (Phaser.Input.Keyboard.JustDown(this.keySpace)) {
+    // Verifica se a tecla Espaço foi pressionada (apenas uma vez por clique) ou botão touch A
+    if (Phaser.Input.Keyboard.JustDown(this.keySpace) || this.touchShootOnce) {
       p.move_atirar(); // Ativa a ação de atirar.
       action_triggered = true;
     }
-    // Verifica se a tecla Ctrl foi pressionada (apenas uma vez por clique).
-    if (Phaser.Input.Keyboard.JustDown(this.keyCtrl)) {
+    // Verifica se a tecla Ctrl foi pressionada (apenas uma vez por clique) ou botão touch B
+    if (Phaser.Input.Keyboard.JustDown(this.keyCtrl) || this.touchAttackOnce) {
       p.move_attack(); // Ativa a ação de ataque.
       action_triggered = true;
     }
+    // Consome triggers touch de um frame
+    this.touchShootOnce = false;
+    this.touchAttackOnce = false;
 
     // Se nenhuma tecla de movimento ou ação foi pressionada, o jogador para.
     if (!(up || down || left || right) && !action_triggered) {

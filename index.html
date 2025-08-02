@@ -59,10 +59,88 @@
         font-weight: 600;
         cursor: pointer;
       }
+    /* --- Controles Touch --- */
+    #touch-controls {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 30;
+    }
+    .tc-btn {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      border: 2px solid rgba(255,255,255,0.35);
+      pointer-events: auto;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-family: monospace;
+      user-select: none;
+    }
+    .tc-btn:active { background: rgba(255,255,255,0.3); }
+
+    /* D-Pad */
+    #dpad {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      width: 192px;
+      height: 192px;
+      pointer-events: none;
+    }
+    #btn-up    { left: 64px; top: 0; }
+    #btn-left  { left: 0; top: 64px; }
+    #btn-right { left: 128px; top: 64px; }
+    #btn-down  { left: 64px; top: 128px; }
+
+    /* Ações */
+    #action-area {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      width: 220px;
+      height: 160px;
+      pointer-events: none;
+    }
+    #btn-shoot {
+      right: 16px; bottom: 16px; width: 80px; height: 80px;
+      border-radius: 50%; background: rgba(80,160,255,0.2); border-color: rgba(80,160,255,0.5);
+    }
+    #btn-attack {
+      right: 112px; bottom: 48px; width: 80px; height: 80px;
+      border-radius: 50%; background: rgba(255,120,80,0.2); border-color: rgba(255,120,80,0.5);
+    }
+
+    @media (max-width: 420px) {
+      .tc-btn { width: 56px; height: 56px; }
+      #dpad { width: 168px; height: 168px; }
+      #btn-up { left: 56px; }
+      #btn-right { left: 112px; }
+      #btn-down { left: 56px; }
+    }
     </style>
   </head>
   <body>
-    <div id="game-container"></div>
+    <div id="game-container">
+      <!-- Controles Touch sobre o canvas -->
+      <div id="touch-controls" aria-hidden="false">
+        <div id="dpad">
+          <div id="btn-up" class="tc-btn" data-action="up">▲</div>
+          <div id="btn-left" class="tc-btn" data-action="left">◀</div>
+          <div id="btn-right" class="tc-btn" data-action="right">▶</div>
+          <div id="btn-down" class="tc-btn" data-action="down">▼</div>
+        </div>
+        <div id="action-area">
+          <div id="btn-shoot" class="tc-btn" data-action="shoot">A</div>
+          <div id="btn-attack" class="tc-btn" data-action="attack">B</div>
+        </div>
+      </div>
+    </div>
 
     <div class="hud" id="hud">Placar: 0  Vida: 0  Pedras: 0</div>
 
