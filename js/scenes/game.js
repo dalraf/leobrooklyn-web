@@ -24,10 +24,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   create() {
-    // Fundo estático simples
-    this.bg = this.add.image(0, 0, 'bg').setOrigin(0, 0);
-    this.bgDisplayW = this.bg.width;
-    this.bgScrollX = 0;
+    // Fundo com tileSprite para scroll
+    this.bg = this.add.tileSprite(0, 0, WIDTH, HEIGHT, 'bg').setOrigin(0, 0);
 
     // Removido áudio/música de fundo
     this.game.events.on('user-start', () => {
@@ -235,8 +233,7 @@ export class GameScene extends Phaser.Scene {
       this.groupObjStatic.children.iterate((obj) => obj && obj.paralaxe && obj.paralaxe(step));
 
       // Scroll background
-      this.bgScrollX = (this.bgScrollX + step) % this.bgDisplayW;
-      this.bg.x = -this.bgScrollX;
+      this.bg.tilePositionX += step;
 
       this.parallax_offset = 0;
       this.distance += step;
