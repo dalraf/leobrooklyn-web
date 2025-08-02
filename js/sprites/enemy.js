@@ -51,7 +51,11 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     if (this.y > HEIGHT) this.y = HEIGHT;
   }
 
-  action_parado = () => { this.anims.play(this.tipo === 1 ? 'enemy1-walk' : 'enemy2-walk', true); };
+  action_parado = () => {
+    const key = this.tipo === 1 ? 'enemy1-walk' : 'enemy2-walk';
+    this.anims.play(key, true);
+    this.anims.stop();
+  };
   action_andando = () => { this.anims.play(this.tipo === 1 ? 'enemy1-walk' : 'enemy2-walk', true); this.setFlipX(this.reverse); };
 
   action_atirar = () => {
@@ -105,17 +109,13 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
   calcule_hit() { return 1; }
 
   customUpdate(groupPlayer, groupEnemy) {
-    if (![this.action_in_attack, this.action_attack, this.action_hit, this.action_atirar].includes(this.execute)) {
-      groupPlayer.children.iterate((player) => {
-        if (!player) return;
-        if (verify_align(this.y, player.y)) {
-          const d = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
-          if (d > DERIVACAO) { if (this.attack_trigger()) this.execute = this.action_atirar; }
-          if (d < DERIVACAO) { if (this.attack_trigger()) this.execute = this.action_in_attack; }
-        }
-      });
+    // Se o inimigo estiver em uma ação de ataque/hit, apenas executa a ação e sai
+    if ([this.action_in_attack, this.action_attack, this.action_hit, this.action_atirar].includes(this.execute)) {
+        if (typeof this.execute === 'function') this.execute();
+        return;
     }
 
+    // Resetar dx e dy para o cálculo do movimento
     this.dx = 0; this.dy = 0;
 
     groupPlayer.children.iterate((player) => {
@@ -123,18 +123,37 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
 
         const dx_to_player = player.x - this.x;
         const dy_to_player = player.y - this.y;
+        const min_distance_x = this.width * 1.05;
 
-        // Lógica para movimento horizontal: aproximar-se até uma distância mínima
-        const min_distance_x = this.width * 1.05; // 1.05 vezes o tamanho do sprite (reduzido em 30%)
-        if (Math.abs(dx_to_player) > min_distance_x) {
-            this.dx += (dx_to_player > 0 ? 1 : -1); // Move em direção ao player horizontalmente
-        } else {
-            // Se estiver dentro da distância mínima, não se move horizontalmente em relação ao player
+        const is_aligned_vertically = verify_align(this.y, player.y);
+        const is_at_min_horizontal_distance = Math.abs(dx_to_player) <= min_distance_x;
+
+        // Condição principal: parado e atacando, ou se movendo
+        if (is_aligned_vertically && is_at_min_horizontal_distance) {
+            // Parar de se mover
             this.dx = 0;
-        }
+            this.dy = 0;
 
-        // Lógica para movimento vertical: sempre em direção ao player
-        this.dy += (dy_to_player > 0 ? 1 : -1);
+            // Lógica de ataque quando parado
+            const d = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
+            if (d > min_distance_x) {
+                if (this.attack_trigger()) this.execute = this.action_atirar;
+            } else { // d <= min_distance_x
+                if (this.attack_trigger()) this.execute = this.action_in_attack;
+            }
+
+            // Se não atacou, fica parado
+            if (![this.action_in_attack, this.action_atirar].includes(this.execute)) {
+                this.execute = this.action_parado;
+            }
+        } else {
+            // Se não estiver nas condições de parar, move-se em direção ao player
+            if (Math.abs(dx_to_player) > min_distance_x) {
+                this.dx += (dx_to_player > 0 ? 1 : -1);
+            }
+            this.dy += (dy_to_player > 0 ? 1 : -1);
+            this.execute = this.action_andando;
+        }
     });
 
     // Manter a lógica de afastamento de outros inimigos
@@ -144,14 +163,11 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
 
     const passo_x = Math.trunc(this.dx * this.speed);
     const passo_y = Math.trunc(this.dy * this.speed);
+
     this.move(passo_x, passo_y);
 
     if (this.dx < 0) this.reverse = true;
     else if (this.dx > 0) this.reverse = false;
-
-    if (![this.action_in_attack, this.action_attack, this.action_hit, this.action_atirar].includes(this.execute)) {
-      this.execute = (this.dx === 0 && this.dy === 0) ? this.action_parado : this.action_andando;
-    }
 
     if (typeof this.execute === 'function') this.execute();
   }
