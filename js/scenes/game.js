@@ -52,6 +52,9 @@ export class GameScene extends Phaser.Scene {
    * Usado para inicializar objetos do jogo, grupos, inputs e listeners.
    */
   create() {
+    // Tenta desbloquear o contexto de áudio para compatibilidade com navegadores móveis.
+    this.sound.unlock();
+
     // Configuração do fundo com duas imagens para criar um efeito de scroll contínuo (parallax).
     this.bg1 = this.add.image(0, 0, 'bg').setOrigin(0, 0);
     this.bg1.displayHeight = HEIGHT;
@@ -87,6 +90,10 @@ export class GameScene extends Phaser.Scene {
         // Toca a música de fundo em loop.
         if (this.music) {
           this.music.stop(); // Garante que não haja múltiplas instâncias tocando.
+        }
+        // Tenta resumir o contexto de áudio, necessário para alguns navegadores móveis.
+        if (this.sound.context.state === 'suspended') {
+          this.sound.context.resume();
         }
         this.music = this.sound.add('music', { loop: true });
         this.music.play();
