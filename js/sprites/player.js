@@ -27,7 +27,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     // Atributos e estados do jogador, aproximando do modelo Pygame original.
     this.step = 10; // Velocidade de movimento base do jogador.
     this.sprint = 2; // Fator de sprint (não usado diretamente no movimento, mas pode ser para animação).
-    this.counter = 0; // Contador genérico (uso não aparente, pode ser removido se não for utilizado).
+    // this.counter = 0; // Contador genérico (uso não aparente, removido por não ser utilizado).
     this.reverse = false; // Indica se o sprite está virado para a esquerda (true) ou direita (false).
     this.pedras = 10; // Quantidade de projéteis (pedras) que o jogador possui.
     this.life = 20; // Pontos de vida do jogador.

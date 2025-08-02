@@ -497,7 +497,8 @@ export class GameScene extends Phaser.Scene {
     if (this.player && !this.player.active) {
       if (!this.stopgame) {
         this.stopgame = true; // Para o jogo.
-        // if (this.music && this.music.isPlaying) this.music.stop(); // Comentado: não há música de fundo.
+        // Não há música de fundo implementada, então esta linha é desnecessária.
+        // if (this.music && this.music.isPlaying) this.music.stop();
         const overlay = document.getElementById('overlay');
         if (overlay) {
           overlay.style.display = 'flex'; // Reexibe o overlay de início.

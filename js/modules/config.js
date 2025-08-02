@@ -64,5 +64,7 @@ export function verify_align(y1, y2) {
  * @returns {string} O caminho completo para o recurso.
  */
 export function resourcePath(rel) {
+  // Atualmente, retorna o caminho relativo diretamente.
+  // Pode ser estendido no futuro para adicionar prefixos de CDN, hashes de versão, etc.
   return `${rel}`;
 }

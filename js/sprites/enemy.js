@@ -30,7 +30,7 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     this.speed = Phaser.Math.Between(3, 3 + speedFactor); // Velocidade aleatória baseada no fator.
     this.pedras = Phaser.Math.Between(0, 2); // Quantidade de projéteis que o inimigo pode atirar.
     this.reverse = false; // Indica se o sprite está virado para a esquerda (true) ou direita (false).
-    this.sprint = 3; // Fator de sprint (não usado diretamente no movimento, mas pode ser para animação).
+    // this.sprint = 3; // Fator de sprint (não usado diretamente no movimento, removido por não ser utilizado).
     this.life = 6; // Pontos de vida do inimigo.
     this.execute = this.action_parado; // Ação atual do inimigo (função a ser executada no update).
     this.dx = 0; // Deslocamento horizontal calculado.
