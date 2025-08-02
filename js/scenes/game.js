@@ -25,10 +25,13 @@ export class GameScene extends Phaser.Scene {
 
   create() {
     // Fundo com tileSprite para scroll
-    this.bg = this.add.image(0, 0, 'bg').setOrigin(0, 0);
-    this.bg.displayHeight = HEIGHT;
-    this.bg.displayWidth = this.bg.width * (HEIGHT / this.bg.height);
-    this.bgScrollX = 0;
+    this.bg1 = this.add.image(0, 0, 'bg').setOrigin(0, 0);
+    this.bg1.displayHeight = HEIGHT;
+    this.bg1.displayWidth = this.bg1.width * (HEIGHT / this.bg1.height);
+
+    this.bg2 = this.add.image(this.bg1.displayWidth, 0, 'bg').setOrigin(0, 0);
+    this.bg2.displayHeight = HEIGHT;
+    this.bg2.displayWidth = this.bg1.displayWidth;
 
     // Removido áudio/música de fundo
     this.game.events.on('user-start', () => {
@@ -236,11 +239,15 @@ export class GameScene extends Phaser.Scene {
       this.groupObjStatic.children.iterate((obj) => obj && obj.paralaxe && obj.paralaxe(step));
 
       // Scroll background
-      this.bgScrollX += step;
-      if (this.bgScrollX > this.bg.displayWidth - WIDTH) {
-          this.bgScrollX = 0; // Resetar o scroll
+      this.bg1.x -= step;
+      this.bg2.x -= step;
+
+      if (this.bg1.x <= -this.bg1.displayWidth) {
+          this.bg1.x = this.bg2.x + this.bg2.displayWidth;
       }
-      this.bg.x = -this.bgScrollX;
+      if (this.bg2.x <= -this.bg2.displayWidth) {
+          this.bg2.x = this.bg1.x + this.bg1.displayWidth;
+      }
 
       this.parallax_offset = 0;
       this.distance += step;
