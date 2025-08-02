@@ -48,6 +48,9 @@ export class GameScene extends Phaser.Scene {
     this.player = new Player(this, WIDTH / 2, HEIGHT * 0.65);
     this.groupPlayer.add(this.player);
 
+    // Registra classes no Registry para acesso global na cena
+    this.registry.set('Class:PedraPlayer', PedraPlayer);
+
     // HUD via DOM
     this.hudEl = document.getElementById('hud');
     this.updateHud();

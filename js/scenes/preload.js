@@ -22,7 +22,7 @@ export class PreloadScene extends Phaser.Scene {
 
     // Player frames (alguns índices podem não existir na pasta copiada; ajuste os limites conforme o que você possui)
     loadRange('player-stop', (i) => `images/Player-1-Stop-${i}.png`, 1, 4);
-    loadRange('player-walk', (i) => `images/Player-1-Walk-${i}.png`, 1, 5);
+    loadRange('player-walk', (i) => `images/Player-1-Walk-${i}.png`, 1, 4);
     loadRange('player-attack', (i) => `images/Player-1-Attack-${i}.png`, 1, 5);
     loadRange('player-hit', (i) => `images/Player-1-Hit-${i}.png`, 1, 4);
     // Se a pasta não tiver até 6, reduza o fim para o máximo existente (ex.: 1..5)
