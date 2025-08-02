@@ -1,9 +1,18 @@
-// Cena principal: porta lógica do loop, input, parallax, spawns e colisões
+// game.js
+// Esta é a cena principal do jogo, responsável por:
+// - Gerenciar o loop principal do jogo.
+// - Lidar com a entrada do usuário.
+// - Implementar o efeito de parallax no fundo e nos objetos.
+// - Controlar o spawn de inimigos e objetos.
+// - Gerenciar colisões e interações entre os sprites.
+// - Atualizar o HUD (Heads-Up Display).
+// - Lidar com o estado de Game Over.
+
 import {
-  WIDTH, HEIGHT, GAME_FPS, PARALLAX_START_THRESHOLD, WHITE,
+  WIDTH, HEIGHT, PARALLAX_START_THRESHOLD,
   DIFICULT_AVANCE, ENEMY_SPAWN_TICK_RESET, DERIVACAO,
-  resourcePath, calcule_vetor_distance, verify_align,
-  SPRITE_LEVEL_Y_HIGH
+  calcule_vetor_distance, // Importa a função de cálculo de distância
+  SPRITE_LEVEL_Y_HIGH // Importa a altura de referência para sprites
 } from '../modules/config.js';
 
 import { Player } from '../sprites/player.js';
@@ -14,17 +23,27 @@ export class GameScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GameScene' });
 
-    // Estado equivalente a GameState
-    this.enemy_spawn_timer = 0;
-    this.parallax_offset = 0;
-    this.stopgame = true;
-    this.distance = 0;
-    this.enemylist = ['enemy1', 'enemy2']; // mapeado para classes abaixo
-    this.score = 0;
+    // Variáveis de estado do jogo, equivalentes a um GameState.
+    this.enemy_spawn_timer = 0; // Contador para o spawn de inimigos.
+    this.parallax_offset = 0; // Deslocamento para o efeito parallax.
+    this.stopgame = true; // Flag para pausar/reiniciar o jogo.
+    this.distance = 0; // Distância percorrida no jogo (afeta a dificuldade).
+    this.enemylist = ['enemy1', 'enemy2']; // Lista de tipos de inimigos para spawn.
+    this.score = 0; // Pontuação do jogador.
+    this.player = null; // Referência ao objeto Player.
+    this.hudEl = null; // Referência ao elemento DOM do HUD.
+    this.cursors = null; // Objeto para controle de setas do teclado.
+    this.keySpace = null; // Tecla Espaço.
+    this.keyCtrl = null; // Tecla Ctrl.
+    this.keyEnter = null; // Tecla Enter.
   }
 
+  /**
+   * Método create é chamado uma vez quando a cena é iniciada.
+   * Usado para inicializar objetos do jogo, grupos, inputs e listeners.
+   */
   create() {
-    // Fundo com tileSprite para scroll
+    // Configuração do fundo com duas imagens para criar um efeito de scroll contínuo (parallax).
     this.bg1 = this.add.image(0, 0, 'bg').setOrigin(0, 0);
     this.bg1.displayHeight = HEIGHT;
     this.bg1.displayWidth = this.bg1.width * (HEIGHT / this.bg1.height);
@@ -33,92 +52,108 @@ export class GameScene extends Phaser.Scene {
     this.bg2.displayHeight = HEIGHT;
     this.bg2.displayWidth = this.bg1.displayWidth;
 
-    // Removido áudio/música de fundo
+    // Listener para o evento 'user-start' (disparado pelo main.js ao clicar no overlay).
     this.game.events.on('user-start', () => {
       if (this.stopgame) {
-        this.stopgame = false;
-        this.resetRun();
+        this.stopgame = false; // Inicia o jogo.
+        this.resetRun(); // Reseta o estado do jogo.
       }
     });
 
-    // Grupos Arcade
-    this.groupPlayer = this.physics.add.group();
-    this.groupEnemy = this.physics.add.group();
-    this.groupObjPlayer = this.physics.add.group();
-    this.groupObjEnemy = this.physics.add.group();
-    this.groupObjStatic = this.physics.add.group();
+    // Criação de grupos de física para organizar os sprites e gerenciar colisões.
+    this.groupPlayer = this.physics.add.group(); // Grupo para o jogador.
+    this.groupEnemy = this.physics.add.group(); // Grupo para os inimigos.
+    this.groupObjPlayer = this.physics.add.group(); // Grupo para objetos disparados pelo jogador (ex: pedras).
+    this.groupObjEnemy = this.physics.add.group(); // Grupo para objetos disparados pelos inimigos.
+    this.groupObjStatic = this.physics.add.group(); // Grupo para objetos estáticos (ex: pedras paradas, band-aids).
 
-    // Player inicial invisível até start
-    this.player = new Player(this, WIDTH / 2, HEIGHT * 0.65);
-    this.groupPlayer.add(this.player);
+    // Inicializa o jogador.
+    this._initPlayer();
 
-    // Registra classes no Registry para acesso global na cena
+    // Registra a classe PedraPlayer no registro da cena para acesso global.
+    // Isso é útil se outras classes precisarem instanciar PedraPlayer sem importá-la diretamente.
     this.registry.set('Class:PedraPlayer', PedraPlayer);
 
-    // HUD via DOM
+    // Obtém a referência ao elemento DOM do HUD e o atualiza.
     this.hudEl = document.getElementById('hud');
     this.updateHud();
 
-    // Mensagens de input
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.keyCtrl = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
-    this.keyEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER);
+    // Configura os controles de input do teclado.
+    this.cursors = this.input.keyboard.createCursorKeys(); // Setas do teclado.
+    this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE); // Tecla Espaço.
+    this.keyCtrl = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL); // Tecla Ctrl.
+    this.keyEnter = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER); // Tecla Enter.
 
-    // Colisões/overlaps (resolvidas manualmente por distância como no Pygame)
-    // Arcade AABB não é usado para dano; usamos DERIVACAO
-
-    // Loop de update manual com time events (Phaser chama update por frame)
-    // Nada extra aqui.
-
-    // Se o usuário apertar ENTER sem clicar
+    // Listener para a tecla ENTER, permitindo iniciar o jogo.
     this.input.keyboard.on('keydown-ENTER', () => {
       if (this.stopgame) this.game.events.emit('user-start');
     });
   }
 
+  /**
+   * Inicializa ou reinicializa o objeto Player.
+   * Usado em `create` e `resetRun` para evitar duplicação de código.
+   */
+  _initPlayer() {
+    if (this.player) {
+      this.player.destroy(); // Destrói a instância anterior do player, se existir.
+    }
+    this.player = new Player(this, WIDTH / 2, HEIGHT * 0.65); // Cria uma nova instância do Player.
+    this.groupPlayer.add(this.player); // Adiciona o player ao grupo de jogadores.
+  }
+
+  /**
+   * Reseta o estado do jogo para um novo início.
+   * Limpa todos os grupos de sprites, reinicia o jogador, pontuação e timers.
+   */
   resetRun() {
-    // Limpa grupos e estado, reinicia player
+    // Limpa todos os grupos de sprites, destruindo os objetos.
     this.groupEnemy.clear(true, true);
     this.groupObjEnemy.clear(true, true);
     this.groupObjPlayer.clear(true, true);
     this.groupObjStatic.clear(true, true);
 
-    if (this.player) {
-        this.player.destroy();
-    }
-    this.player = new Player(this, WIDTH / 2, HEIGHT * 0.65);
-    this.groupPlayer.add(this.player);
+    this._initPlayer(); // Reinicializa o player.
+
+    // Reseta as variáveis de estado do jogo.
     this.score = 0;
     this.distance = 0;
     this.enemy_spawn_timer = 0;
     this.parallax_offset = 0;
-    this.updateHud();
+    this.updateHud(); // Atualiza o HUD para refletir o estado resetado.
   }
 
+  /**
+   * Spawna inimigos na cena com base em um fator de dificuldade.
+   * @param {number} fator - Fator que influencia a quantidade e velocidade dos inimigos.
+   */
   spawnEnemies(fator) {
-    const count = Phaser.Math.Between(1, fator);
+    const count = Phaser.Math.Between(1, fator); // Quantidade de inimigos a serem spawnados.
     for (let i = 0; i < count; i++) {
-      const tipo = Phaser.Utils.Array.GetRandom(this.enemylist);
-      const speedFactor = Math.floor(fator / 2);
+      const tipo = Phaser.Utils.Array.GetRandom(this.enemylist); // Escolhe um tipo de inimigo aleatoriamente.
+      const speedFactor = Math.floor(fator / 2); // Fator de velocidade baseado na dificuldade.
       let enemy;
+      // Instancia o inimigo com base no tipo escolhido.
       if (tipo === 'enemy1') {
         enemy = new Enemy1(this, WIDTH + 10, Phaser.Math.Between(SPRITE_LEVEL_Y_HIGH, HEIGHT - 50), speedFactor);
       } else {
         enemy = new Enemy2(this, WIDTH + 10, Phaser.Math.Between(SPRITE_LEVEL_Y_HIGH, HEIGHT - 50), speedFactor);
       }
-      this.groupEnemy.add(enemy);
+      this.groupEnemy.add(enemy); // Adiciona o inimigo ao grupo de inimigos.
     }
   }
 
+  /**
+   * Spawna objetos estáticos (PedraParada e BandAid) na cena.
+   */
   spawnObjects() {
-    // Pedra parada
+    // Spawna Pedras Paradas.
     const pedrasCount = Phaser.Math.Between(0, 1);
     for (let i = 0; i < pedrasCount; i++) {
       const p = new PedraParada(this, WIDTH + 10, Phaser.Math.Between(HEIGHT - 150, HEIGHT - 30));
       this.groupObjStatic.add(p);
     }
-    // BandAid
+    // Spawna BandAids.
     const bandCount = Phaser.Math.Between(0, 1);
     for (let i = 0; i < bandCount; i++) {
       const b = new BandAid(this, WIDTH + 10, Phaser.Math.Between(HEIGHT - 150, HEIGHT - 30));
@@ -126,90 +161,120 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Gerencia a lógica de geração de inimigos e objetos com base na distância percorrida.
+   */
   generateEnemies() {
-    if (!this.stopgame) {
-      if (this.enemy_spawn_timer === 0) {
-        if (this.distance % DIFICULT_AVANCE === 0) {
-          const fator = 1 + Math.floor(this.distance / DIFICULT_AVANCE);
-          this.spawnEnemies(fator);
-          this.spawnObjects();
-          this.enemy_spawn_timer = ENEMY_SPAWN_TICK_RESET;
+    if (!this.stopgame) { // Só gera inimigos se o jogo não estiver parado.
+      if (this.enemy_spawn_timer === 0) { // Verifica se o timer de spawn zerou.
+        if (this.distance % DIFICULT_AVANCE === 0) { // Aumenta a dificuldade a cada DIFICULT_AVANCE.
+          const fator = 1 + Math.floor(this.distance / DIFICULT_AVANCE); // Calcula o fator de dificuldade.
+          this.spawnEnemies(fator); // Spawna inimigos.
+          this.spawnObjects(); // Spawna objetos.
+          this.enemy_spawn_timer = ENEMY_SPAWN_TICK_RESET; // Reseta o timer de spawn.
         }
       }
-      this.enemy_spawn_timer = Math.max(0, this.enemy_spawn_timer - 1);
+      this.enemy_spawn_timer = Math.max(0, this.enemy_spawn_timer - 1); // Decrementa o timer.
     }
   }
 
+  /**
+   * Lida com colisões entre um grupo de sprites e um grupo de objetos, aplicando dano.
+   * A colisão é verificada manualmente por distância (DERIVACAO).
+   * @param {Phaser.Physics.Arcade.Group} spriteGroup - O grupo de sprites que pode colidir.
+   * @param {Phaser.Physics.Arcade.Group} objectGroup - O grupo de objetos que podem ser colididos.
+   */
   objectSpriteCollide(spriteGroup, objectGroup) {
     spriteGroup.children.iterate((spr) => {
-      if (!spr) return;
+      if (!spr || !spr.active) return; // Garante que o sprite existe e está ativo.
       objectGroup.children.iterate((obj) => {
-        if (!obj) return;
-        const d = calcule_vetor_distance(spr.body.center, obj.body.center);
-        if (d < DERIVACAO) {
-          if (spr.move_hit) spr.move_hit(obj.damage || 1);
-          obj.destroy();
+        if (!obj || !obj.active) return; // Garante que o objeto existe e está ativo.
+        const d = calcule_vetor_distance(spr.body.center, obj.body.center); // Calcula a distância entre os centros.
+        if (d < DERIVACAO) { // Se a distância for menor que a tolerância de colisão.
+          if (spr.move_hit) spr.move_hit(obj.damage || 1); // Aplica dano ao sprite, se ele tiver o método move_hit.
+          obj.destroy(); // Destrói o objeto após a colisão.
         }
       });
     });
   }
 
+  /**
+   * Lida com a coleta de objetos por sprites.
+   * A coleta é verificada manualmente por distância (DERIVACAO).
+   * @param {Phaser.Physics.Arcade.Group} spriteGroup - O grupo de sprites que pode coletar.
+   * @param {Phaser.Physics.Arcade.Group} objectGroup - O grupo de objetos que podem ser coletados.
+   */
   objectSpriteGet(spriteGroup, objectGroup) {
     spriteGroup.children.iterate((spr) => {
-      if (!spr) return;
+      if (!spr || !spr.active) return;
       objectGroup.children.iterate((obj) => {
-        if (!obj) return;
+        if (!obj || !obj.active) return;
         const d = calcule_vetor_distance(spr.body.center, obj.body.center);
         if (d < DERIVACAO) {
-          if (spr.get_object) spr.get_object(obj);
-          obj.destroy();
+          if (spr.get_object) spr.get_object(obj); // Chama o método get_object do sprite.
+          obj.destroy(); // Destrói o objeto após a coleta.
         }
       });
     });
   }
 
+  /**
+   * Lida com colisões de ataque entre o jogador e os inimigos.
+   * Verifica se o ataque do jogador atingiu um inimigo e vice-versa.
+   */
   playerEnemyAttackHit() {
     this.groupPlayer.children.iterate((player) => {
-      if (!player) return;
+      if (!player || !player.active) return;
       this.groupEnemy.children.iterate((enemy) => {
-        if (!enemy) return;
+        if (!enemy || !enemy.active) return;
+
+        // Verifica se o ataque do jogador atingiu o inimigo.
         if (player.check_attack_hit && player.check_attack_hit(enemy)) {
-          this.score += enemy.speed || 1;
-          if (enemy.move_hit) enemy.move_hit(player.calcule_hit ? player.calcule_hit() : 1);
+          this.score += enemy.speed || 1; // Aumenta a pontuação.
+          if (enemy.move_hit) enemy.move_hit(player.calcule_hit ? player.calcule_hit() : 1); // Aplica dano ao inimigo.
         }
+        // Verifica se o ataque do inimigo atingiu o jogador.
         if (enemy.check_attack_hit && enemy.check_attack_hit(player)) {
-          if (player.move_hit) player.move_hit(enemy.calcule_hit ? enemy.calcule_hit() : 1);
+          if (player.move_hit) player.move_hit(enemy.calcule_hit ? enemy.calcule_hit() : 1); // Aplica dano ao jogador.
         }
       });
     });
   }
 
+  /**
+   * Atualiza o texto do HUD com a pontuação, vida e quantidade de pedras do jogador.
+   */
   updateHud() {
-    if (!this.hudEl) return;
+    if (!this.hudEl) return; // Garante que o elemento HUD existe.
     const pedras = this.player ? this.player.pedras : 0;
     const life = this.player ? this.player.life : 0;
     this.hudEl.textContent = `Placar: ${this.score}  Vida: ${life}  Pedras: ${pedras}`;
   }
 
+  /**
+   * Lida com a entrada do usuário e o movimento de parallax.
+   */
   handleInputAndParallax() {
-    if (this.stopgame) return;
+    if (this.stopgame) return; // Não processa input se o jogo estiver parado.
 
     const p = this.player;
-    if (!p) return;
+    if (!p) return; // Garante que o player existe.
 
+    // Verifica o estado das teclas de direção.
     const right = this.cursors.right.isDown;
     const left = this.cursors.left.isDown;
     const up = this.cursors.up.isDown;
     const down = this.cursors.down.isDown;
 
-    // Movimentos combinados no próprio Player
+    // Lógica de movimento do jogador e cálculo do offset de parallax.
     if (right) {
+      // Se o jogador estiver perto da borda direita, ativa o moonwalk e parallax.
       if (p.x > WIDTH * PARALLAX_START_THRESHOLD) {
-        this.parallax_offset = p.step;
-        p.move_moonwalk();
+        this.parallax_offset = p.step; // Define o offset de parallax com base no passo do jogador.
+        p.move_moonwalk(); // Move o jogador em moonwalk.
       } else {
-        this.parallax_offset = 0;
-        p.move_right();
+        this.parallax_offset = 0; // Sem parallax se o jogador não estiver perto da borda.
+        p.move_right(); // Move o jogador normalmente para a direita.
       }
     }
     if (left) p.move_left();
@@ -217,31 +282,36 @@ export class GameScene extends Phaser.Scene {
     if (down) p.move_down();
 
     let action_triggered = false;
+    // Verifica se a tecla Espaço foi pressionada (apenas uma vez por clique).
     if (Phaser.Input.Keyboard.JustDown(this.keySpace)) {
-      p.move_atirar();
+      p.move_atirar(); // Ativa a ação de atirar.
       action_triggered = true;
     }
+    // Verifica se a tecla Ctrl foi pressionada (apenas uma vez por clique).
     if (Phaser.Input.Keyboard.JustDown(this.keyCtrl)) {
-      p.move_attack();
+      p.move_attack(); // Ativa a ação de ataque.
       action_triggered = true;
     }
 
+    // Se nenhuma tecla de movimento ou ação foi pressionada, o jogador para.
     if (!(up || down || left || right) && !action_triggered) {
       p.move_stopped();
     }
 
+    // Aplica o efeito de parallax se houver um offset.
     if (this.parallax_offset > 0) {
-      // Move todos objetos e fundo
-      const step = this.parallax_offset;
+      const step = this.parallax_offset; // O passo do parallax.
+      // Itera sobre todos os grupos de sprites e aplica o parallax.
       this.groupEnemy.children.iterate((obj) => obj && obj.paralaxe && obj.paralaxe(step));
       this.groupObjPlayer.children.iterate((obj) => obj && obj.paralaxe && obj.paralaxe(step));
       this.groupObjEnemy.children.iterate((obj) => obj && obj.paralaxe && obj.paralaxe(step));
       this.groupObjStatic.children.iterate((obj) => obj && obj.paralaxe && obj.paralaxe(step));
 
-      // Scroll background
+      // Rola o fundo (bg1 e bg2) para criar o efeito contínuo.
       this.bg1.x -= step;
       this.bg2.x -= step;
 
+      // Reposiciona as imagens de fundo quando saem da tela para criar um loop infinito.
       if (this.bg1.x <= -this.bg1.displayWidth) {
           this.bg1.x = this.bg2.x + this.bg2.displayWidth;
       }
@@ -249,42 +319,46 @@ export class GameScene extends Phaser.Scene {
           this.bg2.x = this.bg1.x + this.bg1.displayWidth;
       }
 
-      this.parallax_offset = 0;
-      this.distance += step;
+      this.parallax_offset = 0; // Reseta o offset.
+      this.distance += step; // Aumenta a distância percorrida.
     }
   }
 
+  /**
+   * Método update é chamado a cada frame do jogo.
+   * Contém a lógica principal do loop do jogo.
+   */
   update() {
-    // Game Over: se player morreu (removido do grupo)
-    if (!this.player.active) {
+    // Lógica de Game Over: verifica se o jogador está inativo (morreu).
+    if (this.player && !this.player.active) {
       if (!this.stopgame) {
-        this.stopgame = true;
-        if (this.music && this.music.isPlaying) this.music.stop();
-        // Reexibe overlay via DOM
+        this.stopgame = true; // Para o jogo.
+        // if (this.music && this.music.isPlaying) this.music.stop(); // Comentado: não há música de fundo.
         const overlay = document.getElementById('overlay');
-        overlay.style.display = 'flex';
+        if (overlay) {
+          overlay.style.display = 'flex'; // Reexibe o overlay de início.
+        }
       }
     }
 
-    this.generateEnemies();
+    this.generateEnemies(); // Gera inimigos e objetos.
 
-    // Coletas e colisões
-    this.objectSpriteGet(this.groupPlayer, this.groupObjStatic);
-    this.objectSpriteCollide(this.groupEnemy, this.groupObjPlayer);
-    this.objectSpriteCollide(this.groupPlayer, this.groupObjEnemy);
-    this.playerEnemyAttackHit();
+    // Processa coletas e colisões entre os diferentes grupos de sprites.
+    this.objectSpriteGet(this.groupPlayer, this.groupObjStatic); // Jogador coleta objetos estáticos.
+    this.objectSpriteCollide(this.groupEnemy, this.groupObjPlayer); // Inimigos colidem com objetos do jogador.
+    this.objectSpriteCollide(this.groupPlayer, this.groupObjEnemy); // Jogador colide com objetos do inimigo.
+    this.playerEnemyAttackHit(); // Verifica ataques entre jogador e inimigos.
 
-    // Input/movimento e parallax
-    this.handleInputAndParallax();
+    this.handleInputAndParallax(); // Lida com input e parallax.
 
-    // Atualiza entidades (Arcade chama preUpdate, mas temos update custom em classes)
+    // Chama o método customUpdate para cada sprite nos grupos.
+    // Isso permite que cada sprite tenha sua própria lógica de atualização.
     this.groupPlayer.children.iterate((s) => s && s.customUpdate && s.customUpdate());
     this.groupEnemy.children.iterate((s) => s && s.customUpdate && s.customUpdate(this.groupPlayer, this.groupEnemy));
     this.groupObjPlayer.children.iterate((s) => s && s.customUpdate && s.customUpdate());
     this.groupObjEnemy.children.iterate((s) => s && s.customUpdate && s.customUpdate());
     this.groupObjStatic.children.iterate((s) => s && s.customUpdate && s.customUpdate());
 
-    // HUD
-    this.updateHud();
+    this.updateHud(); // Atualiza o HUD.
   }
 }
