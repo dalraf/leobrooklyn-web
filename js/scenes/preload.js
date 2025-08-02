@@ -14,6 +14,7 @@ export class PreloadScene extends Phaser.Scene {
    * O Phaser garante que todos os assets sejam carregados antes de chamar o método create.
    */
   preload() {
+   this.load.baseURL = './'; // Define a base URL para o carregador de assets
     // Carrega a imagem de fundo principal.
     this.load.image('bg', resourcePath('images/bg.png'));
 

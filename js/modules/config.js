@@ -64,5 +64,5 @@ export function verify_align(y1, y2) {
  * @returns {string} O caminho completo para o recurso.
  */
 export function resourcePath(rel) {
-  return `../${rel}`;
+  return `${rel}`;
 }
