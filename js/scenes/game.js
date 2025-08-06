@@ -220,13 +220,16 @@ export class GameScene extends Phaser.Scene {
     // Decrementa o timer de spawn.
     this.enemy_spawn_timer = Math.max(0, this.enemy_spawn_timer - 1);
 
-    // Se o timer zerou, é hora de spawnar.
+    // Se o timer zerou, é hora de tentar spawnar.
     if (this.enemy_spawn_timer === 0) {
-      // Calcula o fator de dificuldade com base na distância.
-      const fator = 1 + Math.floor(this.distance / DIFICULT_AVANCE);
-      
-      // Spawna um inimigo (a função foi ajustada para spawnar apenas um).
-      this.spawnEnemies(fator);
+      // Se já existem 10 ou mais inimigos ativos, apenas reagenda o próximo spawn e sai.
+      const enemyCount = this.groupEnemy ? this.groupEnemy.countActive(true) : 0;
+      if (enemyCount < 10) {
+        // Calcula o fator de dificuldade com base na distância.
+        const fator = 1 + Math.floor(this.distance / DIFICULT_AVANCE);
+        // Spawna um inimigo (a função foi ajustada para spawnar apenas um).
+        this.spawnEnemies(fator);
+      }
 
       // Spawna objetos estáticos com uma chance, para não poluir a tela.
       if (Phaser.Math.Between(1, 5) === 1) {
@@ -236,7 +239,8 @@ export class GameScene extends Phaser.Scene {
       // Reseta o timer. O tempo diminui com a dificuldade, até um mínimo.
       const baseSpawnTime = ENEMY_SPAWN_TICK_RESET; // Tempo base (ex: 100 ticks)
       const minSpawnTime = GAME_FPS; // Mínimo de 1 segundo entre spawns
-      const newSpawnTime = Math.max(minSpawnTime, baseSpawnTime - (fator * 4));
+      const fatorTmp = 1 + Math.floor(this.distance / DIFICULT_AVANCE);
+      const newSpawnTime = Math.max(minSpawnTime, baseSpawnTime - (fatorTmp * 4));
       this.enemy_spawn_timer = newSpawnTime;
     }
   }
