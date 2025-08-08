@@ -56,13 +56,11 @@ export function verify_align(y1, y2) {
 }
 
 /**
- * Retorna o caminho correto para assets considerando ambiente local ou GitHub Pages.
+ * Retorna o caminho relativo do asset, sem duplicar prefixos.
+ * O Phaser já ajusta o baseURL conforme o ambiente.
  * @param {string} path Caminho relativo do asset
- * @returns {string} Caminho ajustado
+ * @returns {string} Caminho relativo
  */
 export function resourcePath(path) {
-  if (window && window.location && window.location.host === 'dalraf.github.io') {
-    return `/leobrooklyn-web/${path.replace(/^\/?/, '')}`;
-  }
-  return `./${path.replace(/^\/?/, '')}`;
+  return path.replace(/^\/?/, '');
 }
