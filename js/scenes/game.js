@@ -375,6 +375,17 @@ export class GameScene extends Phaser.Scene {
     this.groupObjPlayer.children.iterate((s) => s && s.customUpdate && s.customUpdate());
     this.groupObjEnemy.children.iterate((s) => s && s.customUpdate && s.customUpdate());
     this.groupObjStatic.children.iterate((s) => s && s.customUpdate && s.customUpdate());
+
+    // Ordena todos os sprites por profundidade (eixo Y)
+    const allSprites = [];
+    this.groupPlayer.children.iterate((s) => s && allSprites.push(s));
+    this.groupEnemy.children.iterate((s) => s && allSprites.push(s));
+    this.groupObjPlayer.children.iterate((s) => s && allSprites.push(s));
+    this.groupObjEnemy.children.iterate((s) => s && allSprites.push(s));
+    this.groupObjStatic.children.iterate((s) => s && allSprites.push(s));
+    allSprites.sort((a, b) => a.y - b.y);
+    allSprites.forEach((sprite, i) => sprite.setDepth(i));
+
     this.updateHud();
   }
 }
