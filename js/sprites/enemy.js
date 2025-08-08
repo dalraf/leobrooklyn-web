@@ -52,7 +52,9 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
    * Determina se o inimigo deve tentar atacar.
    * @returns {boolean} Verdadeiro se o ataque deve ser acionado, falso caso contrário.
    */
-  attack_trigger() { return Phaser.Math.Between(1, 3000) < this.speed * 30; }
+  attack_trigger(multiplier = 1) {
+    return Phaser.Math.Between(1, 3000) < (this.speed * 30 * multiplier);
+  }
 
   /**
    * Calcula o vetor de afastamento de outros sprites em um grupo.
@@ -227,7 +229,12 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
    * Calcula o dano que o inimigo causa.
    * @returns {number} O valor do dano.
    */
-  calcule_hit() { return 1; } // Inimigos causam 1 de dano.
+  calcule_hit() {
+    let score = 0;
+    if (this.scene && typeof this.scene.score === 'number') score = this.scene.score;
+    const difficultyMultiplier = 1 + (score / 200); // Mesmo multiplicador da velocidade
+    return Math.round(1 * difficultyMultiplier); // Dano aumenta conforme o placar
+  }
 
   /**
    * Método de atualização customizado para o inimigo, chamado a cada frame.
@@ -236,6 +243,11 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
    * @param {Phaser.Physics.Arcade.Group} groupEnemy - Grupo de sprites dos inimigos.
    */
   customUpdate(groupPlayer, groupEnemy) {
+    // Dificuldade dinâmica baseada no placar do jogador
+    let score = 0;
+    if (this.scene && typeof this.scene.score === 'number') score = this.scene.score;
+    const difficultyMultiplier = 1 + (score / 200); // A cada 200 pontos, dobra a velocidade
+
     // Se o inimigo estiver em uma ação de ataque, hit ou tiro, apenas executa a ação e sai.
     if ([this.action_in_attack, this.action_attack, this.action_hit, this.action_atirar].includes(this.execute)) {
         if (typeof this.execute === 'function') this.execute();
@@ -245,58 +257,40 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     this.dx = 0; this.dy = 0; // Reseta os deslocamentos para o cálculo do movimento.
 
     groupPlayer.children.iterate((player) => {
-        if (!player || !player.active) return; // Garante que o player existe e está ativo.
-
-        const dx_to_player = player.x - this.x; // Distância horizontal até o player.
-        const dy_to_player = player.y - this.y; // Distância vertical até o player.
-        const min_distance_x = this.width * 2; // Distância horizontal mínima para considerar ataque (mantém distância maior do player).
-
-        const is_aligned_vertically = verify_align(this.y, player.y); // Verifica alinhamento vertical.
-        const is_at_min_horizontal_distance = Math.abs(dx_to_player) <= min_distance_x; // Verifica distância horizontal mínima.
-
-        // Lógica de IA: se alinhado verticalmente e na distância de ataque.
+        if (!player || !player.active) return;
+        const dx_to_player = player.x - this.x;
+        const dy_to_player = player.y - this.y;
+        const min_distance_x = this.width * 2;
+        const is_aligned_vertically = verify_align(this.y, player.y);
+        const is_at_min_horizontal_distance = Math.abs(dx_to_player) <= min_distance_x;
         if (is_aligned_vertically && is_at_min_horizontal_distance) {
-            this.dx = 0; // Para o movimento horizontal.
-            this.dy = 0; // Para o movimento vertical.
-
+            this.dx = 0;
+            this.dy = 0;
             const d = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
             if (d > min_distance_x) {
-                // Se estiver um pouco longe, tenta atirar.
-                if (this.attack_trigger()) this.execute = this.action_atirar;
+                if (this.attack_trigger(difficultyMultiplier)) this.execute = this.action_atirar;
             } else {
-                // Se estiver perto, tenta ataque corpo a corpo.
-                if (this.attack_trigger()) this.execute = this.action_in_attack;
+                if (this.attack_trigger(difficultyMultiplier)) this.execute = this.action_in_attack;
             }
-
-            // Se nenhuma ação de ataque/tiro foi acionada, fica parado.
             if (![this.action_in_attack, this.action_atirar].includes(this.execute)) {
                 this.execute = this.action_parado;
             }
         } else {
-            // Se não estiver nas condições de parar/atacar, move-se em direção ao player.
             if (Math.abs(dx_to_player) > min_distance_x) {
-                this.dx += (dx_to_player > 0 ? 1 : -1); // Move horizontalmente.
+                this.dx += (dx_to_player > 0 ? 1 : -1);
             }
-            this.dy += (dy_to_player > 0 ? 1 : -1); // Move verticalmente.
-            this.execute = this.action_andando; // Define a ação como andando.
+            this.dy += (dy_to_player > 0 ? 1 : -1);
+            this.execute = this.action_andando;
         }
     });
-
-    // Lógica para afastar-se de outros inimigos (evitar sobreposição).
     const apart = this.calculate_path(groupEnemy, 40);
     this.dx -= apart.dx;
     this.dy -= apart.dy;
-
-    const passo_x = Math.trunc(this.dx * this.speed); // Calcula o passo final em X.
-    const passo_y = Math.trunc(this.dy * this.speed); // Calcula o passo final em Y.
-
-    this.move(passo_x, passo_y); // Aplica o movimento.
-
-    // Atualiza a direção do sprite com base no movimento horizontal.
+    const passo_x = Math.trunc(this.dx * this.speed * difficultyMultiplier);
+    const passo_y = Math.trunc(this.dy * this.speed * difficultyMultiplier);
+    this.move(passo_x, passo_y);
     if (this.dx < 0) this.reverse = true;
     else if (this.dx > 0) this.reverse = false;
-
-    // Executa a ação atual do inimigo.
     if (typeof this.execute === 'function') this.execute();
   }
 }
