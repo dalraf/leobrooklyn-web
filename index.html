@@ -186,29 +186,6 @@
       .joy-knob { width: 64px; height: 64px; margin-left: -32px; margin-top: -32px; }
       .tc-btn { width: 68px; height: 68px; }
     }
-
-    .bar-container {
-      display: inline-block;
-      width: 60px;
-      height: 10px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 6px;
-      margin-left: 8px;
-      vertical-align: middle;
-      overflow: hidden;
-    }
-    .bar {
-      display: block;
-      height: 100%;
-      border-radius: 6px;
-      transition: width 0.3s cubic-bezier(.4,1.4,.6,1);
-    }
-    #hudLifeBar {
-      background: linear-gradient(90deg, #ef4444, #dc2626);
-    }
-    #hudRocksBar {
-      background: linear-gradient(90deg, #f59e0b, #d97706);
-    }
     </style>
   </head>
   <body>
@@ -220,27 +197,16 @@
           <div class="joy-knob" id="joy-knob"></div>
         </div>
         <div id="action-area">
-          <div id="btn-shoot" class="tc-btn" data-action="shoot">A</div>
-          <div id="btn-attack" class="tc-btn" data-action="attack">B</div>
+          <div id="btn-shoot" class="tc-btn" data-action="shoot">Atirar</div>
+          <div id="btn-attack" class="tc-btn" data-action="attack">Bater</div>
         </div>
       </div>
     </div>
 
     <div class="hud" id="hud">
-      <span class="chip">
-        <span class="icon score"></span>
-        <span class="label">Placar</span>: <span class="value" id="hudScore">0</span>
-      </span>
-      <span class="chip">
-        <span class="icon life"></span>
-        <span class="label">Vida</span>: <span class="value" id="hudLife">0</span>
-        <span class="bar-container"><span class="bar" id="hudLifeBar"></span></span>
-      </span>
-      <span class="chip">
-        <span class="icon rock"></span>
-        <span class="label">Pedras</span>: <span class="value" id="hudRocks">0</span>
-        <span class="bar-container"><span class="bar" id="hudRocksBar"></span></span>
-      </span>
+      <span class="chip"><span class="icon score"></span><span class="label">Placar</span>: <span class="value" id="hudScore">0</span></span>
+      <span class="chip"><span class="icon life"></span><span class="label">Vida</span>: <span class="value" id="hudLife">0</span></span>
+      <span class="chip"><span class="icon rock"></span><span class="label">Pedras</span>: <span class="value" id="hudRocks">0</span></span>
     </div>
 
     <div class="overlay" id="overlay" style="display: none;">
