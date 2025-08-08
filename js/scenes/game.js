@@ -315,12 +315,25 @@ export class GameScene extends Phaser.Scene {
     if (!this.hudEl) return; // Garante que o elemento HUD existe.
     const pedras = this.player ? this.player.pedras : 0;
     const life = this.player ? this.player.life : 0;
+    const maxLife = 20; // Valor máximo de vida
+    const maxPedras = 10; // Valor máximo de pedras
 
     // Se os elementos dedicados existem, atualiza-os.
     if (this.hudScoreEl && this.hudLifeEl && this.hudRocksEl) {
       this.hudScoreEl.textContent = String(this.score);
       this.hudLifeEl.textContent = String(life);
       this.hudRocksEl.textContent = String(pedras);
+      // Barras visuais
+      const lifeBar = document.getElementById('hudLifeBar');
+      const rocksBar = document.getElementById('hudRocksBar');
+      if (lifeBar) {
+        lifeBar.style.width = Math.max(0, Math.min(1, life / maxLife)) * 60 + 'px';
+        lifeBar.style.opacity = life > 0 ? '1' : '0.4';
+      }
+      if (rocksBar) {
+        rocksBar.style.width = Math.max(0, Math.min(1, pedras / maxPedras)) * 60 + 'px';
+        rocksBar.style.opacity = pedras > 0 ? '1' : '0.4';
+      }
     } else {
       // Fallback para layout antigo (texto simples)
       this.hudEl.textContent = `Placar: ${this.score}  Vida: ${life}  Pedras: ${pedras}`;
