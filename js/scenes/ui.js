@@ -1,30 +1,19 @@
 // ui.js
-// Esta cena é dedicada à interface do usuário (UI).
-// Atualmente, o HUD principal é gerenciado diretamente no DOM via `GameScene` para flexibilidade.
-// No entanto, esta cena é mantida para futuras extensões, como menus de pausa, telas de game over,
-// ou qualquer outro elemento de UI que possa ser renderizado diretamente no canvas do Phaser.
+// Cena dedicada à interface do usuário (UI) para futuras extensões.
+// O HUD principal é gerenciado via DOM na GameScene.
 
 export class UIScene extends Phaser.Scene {
   constructor() {
-    // Define a chave da cena e a marca como inativa por padrão, pois não precisa ser exibida imediatamente.
     super({ key: 'UIScene', active: false });
   }
 
-  /**
-   * O método create é chamado uma vez quando a cena é iniciada.
-   * Aqui, poderíamos adicionar elementos de UI do Phaser, como texto, botões, etc.
-   */
+  /** Método create para elementos de UI futuros. */
   create() {
-    // Exemplo de como o HUD poderia ser implementado diretamente no Phaser,
-    // caso se opte por não usar elementos DOM para o placar.
+    // Exemplo de HUD Phaser (desativado, pois o HUD é DOM):
     /*
     this.scoreText = this.add.text(8, 8, 'Placar: 0  Vida: 0  Pedras: 0', {
-      fontFamily: 'Sans-serif',
-      fontSize: '16px',
-      color: '#ffffff',
-    }).setScrollFactor(0).setDepth(1000); // setScrollFactor(0) faz com que o texto não role com a câmera.
-
-    // Exemplo de como escutar eventos para atualizar a UI, se um sistema de eventos for implementado.
+      fontFamily: 'Sans-serif', fontSize: '16px', color: '#ffffff',
+    }).setScrollFactor(0).setDepth(1000);
     this.game.events.on('hud-update', (text) => this.scoreText.setText(text));
     */
   }

@@ -1,160 +1,183 @@
 // enemy.js
-// Este módulo define as classes para os inimigos do jogo.
-// Inclui uma classe base `EnemyBase` e classes específicas `Enemy1` e `Enemy2`.
+// Módulo de definição dos inimigos do jogo (EnemyBase, Enemy1, Enemy2)
+// Responsável por movimentação, ataque, dano e animações dos inimigos.
 
-import {
-  WIDTH, HEIGHT, DERIVACAO, verify_align // Importa constantes e funções utilitárias.
-} from '../modules/config.js';
-import { PedraEnemy } from './objects.js'; // Importa a classe PedraEnemy para projéteis.
+import { WIDTH, HEIGHT, DERIVACAO, verify_align } from '../modules/config.js';
+import { PedraEnemy } from './objects.js';
 
 /**
  * Classe base para todos os inimigos do jogo.
- * Estende Phaser.Physics.Arcade.Sprite para ter corpo físico e animações.
+ * Gerencia física, animações, IA e ações do inimigo.
  */
 class EnemyBase extends Phaser.Physics.Arcade.Sprite {
-  /**
-   * Construtor da classe EnemyBase.
-   * @param {Phaser.Scene} scene - A cena do Phaser à qual o inimigo pertence.
-   * @param {number} x - Posição X inicial do inimigo.
-   * @param {number} y - Posição Y inicial do inimigo.
-   * @param {string} textureKeyWalk1 - Chave da textura inicial para a animação de caminhada.
-   * @param {number} tipo - Tipo do inimigo (1 para Enemy1, 2 para Enemy2).
-   * @param {number} speedFactor - Fator que influencia a velocidade do inimigo.
-   */
   constructor(scene, x, y, textureKeyWalk1, tipo, speedFactor) {
-    super(scene, x, y, textureKeyWalk1); // Chama o construtor da classe pai (Phaser.Sprite).
-    scene.add.existing(this); // Adiciona o sprite à cena.
-    scene.physics.add.existing(this); // Adiciona o sprite ao sistema de física da cena.
-
-    this.tipo = tipo; // Tipo do inimigo.
-    this.speed = Phaser.Math.Between(3, 3 + speedFactor); // Velocidade aleatória baseada no fator.
-    this.pedras = Phaser.Math.Between(0, 2); // Quantidade de projéteis que o inimigo pode atirar.
-    this.reverse = false; // Indica se o sprite está virado para a esquerda (true) ou direita (false).
-    // this.sprint = 3; // Fator de sprint (não usado diretamente no movimento, removido por não ser utilizado).
-    this.life = 6; // Pontos de vida do inimigo.
-    this.execute = this.action_parado; // Ação atual do inimigo (função a ser executada no update).
-    this.dx = 0; // Deslocamento horizontal calculado.
-    this.dy = 0; // Deslocamento vertical calculado.
-    this._shotSpawned = false; // Flag para controlar se um projétil já foi spawnado durante a animação de tiro.
-
-    this.setOrigin(0.5, 1.0); // Define a origem do sprite no centro inferior.
-    this.setDepth(4); // Define a profundidade de renderização (para sobreposição de sprites).
-    this.body.setAllowGravity(false); // Desativa a gravidade para o corpo físico.
+    super(scene, x, y, textureKeyWalk1);
+    scene.add.existing(this);
+    scene.physics.add.existing(this);
+    this.tipo = tipo;
+    this.speed = Phaser.Math.Between(3, 3 + speedFactor); // Velocidade base
+    this.pedras = Phaser.Math.Between(0, 2); // Quantidade de projéteis
+    this.reverse = false; // Direção do sprite
+    this.life = 6; // Vida inicial
+    this.execute = this.action_parado;
+    this.dx = 0;
+    this.dy = 0;
+    this._shotSpawned = false;
+    this.setOrigin(0.5, 1.0);
+    this.setDepth(4);
+    this.body.setAllowGravity(false);
   }
 
-  /**
-   * Aplica o deslocamento de parallax ao inimigo.
-   * @param {number} step - O valor do deslocamento horizontal.
-   */
+  /** Move o inimigo pelo cenário, respeitando limites de tela. */
+  move(vx, vy) {
+    this.x += vx;
+    this.y += vy;
+    this.x = Phaser.Math.Clamp(this.x, -50, WIDTH + 50);
+    this.y = Phaser.Math.Clamp(this.y, 0, HEIGHT);
+  }
+
+  /** Aplica parallax horizontal ao inimigo. */
   paralaxe(step) { this.x -= step; }
 
-  /**
-   * Determina se o inimigo deve tentar atacar.
-   * @returns {boolean} Verdadeiro se o ataque deve ser acionado, falso caso contrário.
-   */
+  /** Decide se o inimigo deve atacar, considerando a dificuldade. */
   attack_trigger(multiplier = 1) {
     return Phaser.Math.Between(1, 3000) < (this.speed * 30 * multiplier);
   }
 
-  /**
-   * Calcula o vetor de afastamento de outros sprites em um grupo.
-   * Usado para evitar que inimigos se aglomerem.
-   * @param {Phaser.Physics.Arcade.Group} group - O grupo de sprites a ser verificado.
-   * @param {number} diametro - Diâmetro de influência para o cálculo do afastamento.
-   * @returns {{dx: number, dy: number}} Um objeto com os componentes X e Y do vetor de afastamento.
-   */
+  /** Evita aglomeração de inimigos, calculando vetor de afastamento. */
   calculate_path(group, diametro) {
     let final_dx = 0, final_dy = 0;
     group.children.iterate((sprite) => {
-      if (!sprite || sprite === this) return; // Ignora sprites nulos ou o próprio inimigo.
+      if (!sprite || sprite === this) return;
       const dx = sprite.x - this.x;
       const dy = sprite.y - this.y;
-      const dist = Math.hypot(dx, dy); // Distância entre os sprites.
-      let vx = 0, vy = 0;
-
-      // Lógica para calcular o vetor de repulsão.
+      const dist = Math.hypot(dx, dy);
       if (diametro > 0 && dist < diametro && dist > 0) {
-        vx = dx / dist; vy = dy / dist;
-      } else if (diametro > 0 && dist > diametro) {
-        vx = 0; vy = 0;
-      } else if (diametro === 0 && dist > 0) {
-        vx = dx / dist; vy = dy / dist;
+        final_dx += dx / dist;
+        final_dy += dy / dist;
       }
-      final_dx += vx; final_dy += vy;
     });
     return { dx: final_dx, dy: final_dy };
   }
 
-  /**
-   * Move o inimigo pelos valores dx e dy e aplica limites de tela.
-   * @param {number} vx - Velocidade no eixo X.
-   * @param {number} vy - Velocidade no eixo Y.
-   */
-  move(vx, vy) {
-    this.x += vx;
-    this.y += vy;
-    // Limites de tela com uma pequena margem.
-    if (this.x < -50) this.x = -50;
-    if (this.x > WIDTH + 50) this.x = WIDTH + 50;
-    if (this.y < 0) this.y = 0;
-    if (this.y > HEIGHT) this.y = HEIGHT;
+  /** Aplica dano ao inimigo e executa animação de hit. */
+  move_hit(dano) {
+    this.life -= dano || 1;
+    if (this.life <= 0) {
+      this.destroy();
+      return;
+    }
+    this.execute = this.action_hit;
   }
 
-  // --- Definição das Ações/Estados do Inimigo ---
+  /** Verifica se o ataque corpo a corpo atingiu o player. */
+  check_attack_hit(target) {
+    if (this.execute !== this.action_attack) return false;
+    const d = Phaser.Math.Distance.Between(this.body.center.x, this.body.center.y, target.body.center.x, target.body.center.y);
+    if (d < DERIVACAO) {
+      // Só ataca se estiver virado para o player
+      if (this.reverse && target.x < this.x) return true;
+      if (!this.reverse && target.x > this.x) return true;
+    }
+    return false;
+  }
 
-  /**
-   * Ação: Inimigo parado.
-   * Reproduz a primeira frame da animação de caminhada e para.
-   */
+  /** Dano do inimigo aumenta conforme o placar do jogador. */
+  calcule_hit() {
+    let score = 0;
+    if (this.scene && typeof this.scene.score === 'number') score = this.scene.score;
+    const difficultyMultiplier = 1 + (score / 200);
+    return Math.round(1 * difficultyMultiplier);
+  }
+
+  /** Atualização de IA e ações do inimigo a cada frame. */
+  customUpdate(groupPlayer, groupEnemy) {
+    let score = 0;
+    if (this.scene && typeof this.scene.score === 'number') score = this.scene.score;
+    const difficultyMultiplier = 1 + (score / 200);
+    if ([this.action_in_attack, this.action_attack, this.action_hit, this.action_atirar].includes(this.execute)) {
+      if (typeof this.execute === 'function') this.execute();
+      return;
+    }
+    this.dx = 0; this.dy = 0;
+    groupPlayer.children.iterate((player) => {
+      if (!player || !player.active) return;
+      const dx_to_player = player.x - this.x;
+      const dy_to_player = player.y - this.y;
+      const min_distance_x = this.width * 2;
+      const is_aligned_vertically = verify_align(this.y, player.y);
+      const is_at_min_horizontal_distance = Math.abs(dx_to_player) <= min_distance_x;
+      this.reverse = dx_to_player < 0; // Mantém sempre virado para o player
+      if (is_aligned_vertically && is_at_min_horizontal_distance) {
+        this.dx = 0;
+        this.dy = 0;
+        const d = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
+        if (d > min_distance_x) {
+          if (this.attack_trigger(difficultyMultiplier)) this.execute = this.action_atirar;
+        } else {
+          if (this.attack_trigger(difficultyMultiplier)) this.execute = this.action_in_attack;
+        }
+        if (![this.action_in_attack, this.action_atirar].includes(this.execute)) {
+          this.execute = this.action_parado;
+        }
+      } else {
+        if (Math.abs(dx_to_player) > min_distance_x) {
+          this.dx += (dx_to_player > 0 ? 1 : -1);
+        }
+        this.dy += (dy_to_player > 0 ? 1 : -1);
+        this.execute = this.action_andando;
+      }
+    });
+    const apart = this.calculate_path(groupEnemy, 40);
+    this.dx -= apart.dx;
+    this.dy -= apart.dy;
+    const passo_x = Math.trunc(this.dx * this.speed);
+    const passo_y = Math.trunc(this.dy * this.speed);
+    this.move(passo_x, passo_y);
+    // Ação atual do inimigo
+    if (typeof this.execute === 'function') this.execute();
+  }
+
+  // --- Ações/Estados do Inimigo ---
+
+  /** Parado: reproduz frame inicial da caminhada. */
   action_parado = () => {
     const key = this.tipo === 1 ? 'enemy1-walk' : 'enemy2-walk';
     this.anims.play(key, true);
     this.anims.stop();
   };
 
-  /**
-   * Ação: Inimigo andando.
-   * Reproduz a animação de caminhada e ajusta a direção do sprite.
-   */
+  /** Andando: animação de caminhada e direção. */
   action_andando = () => {
     this.anims.play(this.tipo === 1 ? 'enemy1-walk' : 'enemy2-walk', true);
-    this.setFlipX(this.reverse); // Vira o sprite horizontalmente se 'reverse' for true.
+    this.setFlipX(this.reverse);
   };
 
-  /**
-   * Ação: Inimigo atirando (lançando projétil).
-   * Reproduz a animação de ataque e spawna um projétil no final da animação.
-   */
+  /** Atirando: animação de ataque e spawn de projétil. */
   action_atirar = () => {
-    if (this.pedras <= 0) { // Se não tiver projéteis, volta ao estado parado.
+    if (this.pedras <= 0) {
       this.execute = this.action_parado;
       return;
     }
     const key = this.tipo === 1 ? 'enemy1-attack' : 'enemy2-attack';
-    // Inicia a animação de ataque se não estiver já tocando.
     if (this.anims.currentAnim?.key !== key || this.anims.isPlaying === false) {
       this.anims.play(key, true);
       this.setFlipX(this.reverse);
     }
-    // Spawna o projétil quando a animação atinge o último frame e ainda não foi spawnado.
     if (this.anims.currentFrame && this.anims.currentFrame.isLast && !this._shotSpawned) {
       this._shotSpawned = true;
-      const dir = this.reverse ? -1 : 1; // Direção do projétil.
+      const dir = this.reverse ? -1 : 1;
       const proj = new PedraEnemy(this.scene, this.x + (dir > 0 ? 20 : -20), this.y - 35, dir);
-      this.scene.groupObjEnemy.add(proj); // Adiciona o projétil ao grupo de objetos inimigos.
-      this.pedras -= 1; // Decrementa a contagem de projéteis.
+      this.scene.groupObjEnemy.add(proj);
+      this.pedras -= 1;
     }
-    // Volta ao estado parado após a animação de tiro.
     if (this.anims.currentFrame && this.anims.currentFrame.isLast) {
       this._shotSpawned = false;
       this.execute = this.action_parado;
     }
   };
 
-  /**
-   * Ação: Inimigo iniciando um ataque corpo a corpo.
-   * Transiciona para a ação `action_attack` após a animação inicial.
-   */
+  /** Iniciando ataque corpo a corpo. */
   action_in_attack = () => {
     const key = this.tipo === 1 ? 'enemy1-attack' : 'enemy2-attack';
     if (this.anims.currentAnim?.key !== key || this.anims.isPlaying === false) {
@@ -162,14 +185,11 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
       this.setFlipX(this.reverse);
     }
     if (this.anims.currentFrame && this.anims.currentFrame.isLast) {
-      this.execute = this.action_attack; // Transiciona para o estado de ataque efetivo.
+      this.execute = this.action_attack;
     }
   };
 
-  /**
-   * Ação: Inimigo realizando um ataque corpo a corpo.
-   * Volta ao estado parado após a animação de ataque.
-   */
+  /** Ataque corpo a corpo efetivo. */
   action_attack = () => {
     const key = this.tipo === 1 ? 'enemy1-attack' : 'enemy2-attack';
     if (this.anims.currentAnim?.key !== key || this.anims.isPlaying === false) {
@@ -177,14 +197,11 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
       this.setFlipX(this.reverse);
     }
     if (this.anims.currentFrame && this.anims.currentFrame.isLast) {
-      this.execute = this.action_parado; // Volta ao estado parado.
+      this.execute = this.action_parado;
     }
   };
 
-  /**
-   * Ação: Inimigo sendo atingido.
-   * Reproduz a animação de hit e volta ao estado parado.
-   */
+  /** Animação de ser atingido. */
   action_hit = () => {
     const key = this.tipo === 1 ? 'enemy1-hit' : 'enemy2-hit';
     if (this.anims.currentAnim?.key !== key || this.anims.isPlaying === false) {
@@ -192,126 +209,19 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
       this.setFlipX(this.reverse);
     }
     if (this.anims.currentFrame && this.anims.currentFrame.isLast) {
-      this.execute = this.action_parado; // Volta ao estado parado.
+      this.execute = this.action_parado;
     }
   };
-
-  /**
-   * Aplica dano ao inimigo.
-   * @param {number} dano - A quantidade de dano a ser aplicada.
-   */
-  move_hit(dano) {
-    this.life -= dano || 1; // Reduz a vida.
-    if (this.life <= 0) {
-      this.destroy(); // Destrói o inimigo se a vida chegar a zero.
-      return;
-    }
-    this.execute = this.action_hit; // Muda para a ação de ser atingido.
-  }
-
-  /**
-   * Verifica se o ataque do inimigo atingiu um alvo.
-   * @param {Phaser.Physics.Arcade.Sprite} target - O sprite alvo a ser verificado.
-   * @returns {boolean} Verdadeiro se o ataque atingiu o alvo, falso caso contrário.
-   */
-  check_attack_hit(target) {
-    if (this.execute !== this.action_attack) return false;
-    const d = Phaser.Math.Distance.Between(this.body.center.x, this.body.center.y, target.body.center.x, target.body.center.y);
-    if (d < DERIVACAO) {
-      // Corrige para garantir que o inimigo só ataca se estiver realmente olhando para o player
-      if (this.reverse && target.x < this.x) return true; // Olhando para a esquerda e player está à esquerda
-      if (!this.reverse && target.x > this.x) return true; // Olhando para a direita e player está à direita
-      return false;
-    }
-    return false;
-  }
-
-  /**
-   * Calcula o dano que o inimigo causa.
-   * @returns {number} O valor do dano.
-   */
-  calcule_hit() {
-    let score = 0;
-    if (this.scene && typeof this.scene.score === 'number') score = this.scene.score;
-    const difficultyMultiplier = 1 + (score / 200); // Mesmo multiplicador da velocidade
-    return Math.round(1 * difficultyMultiplier); // Dano aumenta conforme o placar
-  }
-
-  /**
-   * Método de atualização customizado para o inimigo, chamado a cada frame.
-   * Contém a lógica de IA do inimigo.
-   * @param {Phaser.Physics.Arcade.Group} groupPlayer - Grupo de sprites do jogador.
-   * @param {Phaser.Physics.Arcade.Group} groupEnemy - Grupo de sprites dos inimigos.
-   */
-  customUpdate(groupPlayer, groupEnemy) {
-    // Dificuldade dinâmica baseada no placar do jogador
-    let score = 0;
-    if (this.scene && typeof this.scene.score === 'number') score = this.scene.score;
-    const difficultyMultiplier = 1 + (score / 200); // A cada 200 pontos, dobra a velocidade
-
-    // Se o inimigo estiver em uma ação de ataque, hit ou tiro, apenas executa a ação e sai.
-    if ([this.action_in_attack, this.action_attack, this.action_hit, this.action_atirar].includes(this.execute)) {
-        if (typeof this.execute === 'function') this.execute();
-        return;
-    }
-
-    this.dx = 0; this.dy = 0; // Reseta os deslocamentos para o cálculo do movimento.
-
-    groupPlayer.children.iterate((player) => {
-        if (!player || !player.active) return;
-        const dx_to_player = player.x - this.x;
-        const dy_to_player = player.y - this.y;
-        const min_distance_x = this.width * 2;
-        const is_aligned_vertically = verify_align(this.y, player.y);
-        const is_at_min_horizontal_distance = Math.abs(dx_to_player) <= min_distance_x;
-        // Mantém o inimigo sempre virado para o player
-        this.reverse = dx_to_player < 0;
-        if (is_aligned_vertically && is_at_min_horizontal_distance) {
-            this.dx = 0;
-            this.dy = 0;
-            const d = Phaser.Math.Distance.Between(this.x, this.y, player.x, player.y);
-            if (d > min_distance_x) {
-                if (this.attack_trigger(difficultyMultiplier)) this.execute = this.action_atirar;
-            } else {
-                if (this.attack_trigger(difficultyMultiplier)) this.execute = this.action_in_attack;
-            }
-            if (![this.action_in_attack, this.action_atirar].includes(this.execute)) {
-                this.execute = this.action_parado;
-            }
-        } else {
-            if (Math.abs(dx_to_player) > min_distance_x) {
-                this.dx += (dx_to_player > 0 ? 1 : -1);
-            }
-            this.dy += (dy_to_player > 0 ? 1 : -1);
-            this.execute = this.action_andando;
-        }
-    });
-    const apart = this.calculate_path(groupEnemy, 40);
-    this.dx -= apart.dx;
-    this.dy -= apart.dy;
-    const passo_x = Math.trunc(this.dx * this.speed); // Mantém velocidade constante
-    const passo_y = Math.trunc(this.dy * this.speed); // Mantém velocidade constante
-    this.move(passo_x, passo_y);
-    if (this.dx < 0) this.reverse = true;
-    else if (this.dx > 0) this.reverse = false;
-    if (typeof this.execute === 'function') this.execute();
-  }
 }
 
-/**
- * Classe para o Inimigo tipo 1.
- * Estende EnemyBase com a textura inicial e tipo 1.
- */
+/** Inimigo tipo 1. */
 export class Enemy1 extends EnemyBase {
   constructor(scene, x, y, speedFactor) {
     super(scene, x, y, 'enemy1-walk-1', 1, speedFactor);
   }
 }
 
-/**
- * Classe para o Inimigo tipo 2.
- * Estende EnemyBase com a textura inicial e tipo 2.
- */
+/** Inimigo tipo 2. */
 export class Enemy2 extends EnemyBase {
   constructor(scene, x, y, speedFactor) {
     super(scene, x, y, 'enemy2-walk-1', 2, speedFactor);

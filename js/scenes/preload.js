@@ -1,6 +1,5 @@
 // preload.js
-// Esta cena é responsável por carregar todos os assets (imagens, sons, etc.)
-// e definir as animações do jogo antes que a cena principal (GameScene) seja iniciada.
+// Cena de pré-carregamento: carrega assets e define animações do jogo.
 
 import { resourcePath } from '../modules/config.js';
 
@@ -9,15 +8,10 @@ export class PreloadScene extends Phaser.Scene {
     super({ key: 'PreloadScene' });
   }
 
-  /**
-   * O método preload é onde todos os assets do jogo são carregados.
-   * O Phaser garante que todos os assets sejam carregados antes de chamar o método create.
-   */
+  /** Carrega todos os assets do jogo. */
   preload() {
-   // Define a base URL para o carregador de assets, considerando o ambiente do GitHub Pages
-   // Define a base URL para o carregador de assets, considerando o ambiente do GitHub Pages.
-   // Se o host for 'dalraf.github.io', usa o nome do repositório como base. Caso contrário, usa './'.
-   this.load.baseURL = (window.location.host === 'dalraf.github.io') ? '/leobrooklyn-web/' : './';
+    // Define a base URL para o carregador de assets, considerando o ambiente do GitHub Pages
+    this.load.baseURL = (window.location.host === 'dalraf.github.io') ? '/leobrooklyn-web/' : './';
     // Carrega a imagem de fundo principal.
     this.load.image('bg', resourcePath('images/bg.png'));
 
@@ -62,10 +56,7 @@ export class PreloadScene extends Phaser.Scene {
     this.load.audio('music', resourcePath('sounds/musica_fundo.ogg'));
   }
 
-  /**
-   * O método create é chamado uma vez após todos os assets terem sido carregados.
-   * Usado para criar animações a partir dos frames carregados.
-   */
+  /** Cria animações e inicia a cena principal. */
   create() {
     /**
      * Helper para criar animações do Phaser.
