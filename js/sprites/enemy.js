@@ -286,8 +286,8 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
     const apart = this.calculate_path(groupEnemy, 40);
     this.dx -= apart.dx;
     this.dy -= apart.dy;
-    const passo_x = Math.trunc(this.dx * this.speed * difficultyMultiplier);
-    const passo_y = Math.trunc(this.dy * this.speed * difficultyMultiplier);
+    const passo_x = Math.trunc(this.dx * this.speed); // Mantém velocidade constante
+    const passo_y = Math.trunc(this.dy * this.speed); // Mantém velocidade constante
     this.move(passo_x, passo_y);
     if (this.dx < 0) this.reverse = true;
     else if (this.dx > 0) this.reverse = false;
