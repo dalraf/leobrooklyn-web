@@ -249,7 +249,7 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
 
         const dx_to_player = player.x - this.x; // Distância horizontal até o player.
         const dy_to_player = player.y - this.y; // Distância vertical até o player.
-        const min_distance_x = this.width * 1.05; // Distância horizontal mínima para considerar ataque.
+        const min_distance_x = this.width * 2; // Distância horizontal mínima para considerar ataque (mantém distância maior do player).
 
         const is_aligned_vertically = verify_align(this.y, player.y); // Verifica alinhamento vertical.
         const is_at_min_horizontal_distance = Math.abs(dx_to_player) <= min_distance_x; // Verifica distância horizontal mínima.

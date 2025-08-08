@@ -20,7 +20,7 @@ export const STOPPED = 'Stopped'; // Estado de movimento: Parado.
 export const MOONWALK = 'MoonWalk'; // Estado de movimento: Moonwalk (movimento para trás mantendo a frente).
 
 // Constantes de jogo
-export const DERIVACAO = 40; // Tolerância para colisões ou alinhamento (distância máxima para considerar colisão/alinhamento).
+export const DERIVACAO = 70; // Tolerância para colisões ou alinhamento (distância máxima para considerar colisão/alinhamento).
 export const STATE_INATTACK = 'In_Attack'; // Estado de ataque: Iniciando ataque.
 export const STATE_ATTACK = 'Attack'; // Estado de ataque: Ataque ativo.
 export const STATE_STOP = 'Stop'; // Estado: Parado.
