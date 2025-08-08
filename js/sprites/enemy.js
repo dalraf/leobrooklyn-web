@@ -215,12 +215,13 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
    * @returns {boolean} Verdadeiro se o ataque atingiu o alvo, falso caso contrário.
    */
   check_attack_hit(target) {
-    if (this.execute !== this.action_attack) return false; // Só verifica se estiver na ação de ataque.
+    if (this.execute !== this.action_attack) return false;
     const d = Phaser.Math.Distance.Between(this.body.center.x, this.body.center.y, target.body.center.x, target.body.center.y);
-    if (d < DERIVACAO) { // Se a distância for menor que a tolerância de colisão.
-      // Verifica a direção do ataque para garantir que o inimigo está "olhando" para o alvo.
-      return this.reverse ? this.getBounds().left > target.getBounds().left
-                          : this.getBounds().left < target.getBounds().left;
+    if (d < DERIVACAO) {
+      // Corrige para garantir que o inimigo só ataca se estiver realmente olhando para o player
+      if (this.reverse && target.x < this.x) return true; // Olhando para a esquerda e player está à esquerda
+      if (!this.reverse && target.x > this.x) return true; // Olhando para a direita e player está à direita
+      return false;
     }
     return false;
   }
@@ -263,6 +264,8 @@ class EnemyBase extends Phaser.Physics.Arcade.Sprite {
         const min_distance_x = this.width * 2;
         const is_aligned_vertically = verify_align(this.y, player.y);
         const is_at_min_horizontal_distance = Math.abs(dx_to_player) <= min_distance_x;
+        // Mantém o inimigo sempre virado para o player
+        this.reverse = dx_to_player < 0;
         if (is_aligned_vertically && is_at_min_horizontal_distance) {
             this.dx = 0;
             this.dy = 0;
